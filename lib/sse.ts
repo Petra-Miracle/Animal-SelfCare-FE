@@ -6,7 +6,7 @@
    Hook ini hanya menyalurkan event; keputusan refresh ada di masing-masing halaman. */
 
 import { useEffect, useRef, useState } from "react";
-import { API_BASE } from "./api";
+import { API_BASE, getToken } from "./api";
 
 export const REPORT_EVENTS = [
   "report:created",
@@ -63,7 +63,10 @@ export function useRealtime(onEvent?: (ev: RealtimeEvent) => void, enabled = tru
     const connect = () => {
       if (closed) return;
       try {
-        es = new EventSource(`${API_BASE}/realtime/stream`);
+        // EventSource tidak mendukung header custom — token dikirim via query param.
+        const token = getToken();
+        const url = token ? `${API_BASE}/realtime/stream?token=${encodeURIComponent(token)}` : `${API_BASE}/realtime/stream`;
+        es = new EventSource(url);
       } catch {
         scheduleRetry();
         return;

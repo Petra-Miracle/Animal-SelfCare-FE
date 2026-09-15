@@ -92,7 +92,7 @@ export default function ReportQuickView({
                 <div className="rounded-2xl bg-amber-50 p-3">
                   <HeroUser
                     name={report.reporterName}
-                    description={`${report.reporterPhone} · ${report.reporterEmail}`}
+                    description={[report.reporterPhone, report.reporterEmail].filter(Boolean).join(" · ") || "-"}
                     avatarProps={{ name: report.reporterName.charAt(0).toUpperCase(), className: "bg-amber-600 text-white" }}
                   />
                   <p className="mt-2 flex items-center gap-1.5 text-[11px] text-amber-800">

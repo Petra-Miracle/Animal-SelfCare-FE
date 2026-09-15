@@ -140,7 +140,7 @@ export default function FacilityReportsPage() {
                     <TableCell className="min-w-56">
                       <p className="max-w-64 truncate text-sm font-bold text-stone-900">{r.locationText}</p>
                       <p className="text-xs text-stone-500">
-                        {formatDateID(r.foundAt)} · {r.animalTypeGuess ?? "?"} · {r.animalCount} ekor
+                        {formatDateID(r.foundAt)} · {r.animalTypeGuess || "?"} · {r.animalCount} ekor
                         {r.isEmergency ? " · DARURAT" : ""}
                       </p>
                       {r.conditionTags.length > 0 ? (
@@ -157,7 +157,7 @@ export default function FacilityReportsPage() {
                     <TableCell className="min-w-48">
                       <HeroUser
                         name={r.reporterName}
-                        description={r.reporterPhone}
+                        description={r.reporterPhone || r.reporterEmail || "-"}
                         avatarProps={{ name: r.reporterName.charAt(0).toUpperCase(), size: "sm", className: "bg-brand-600 text-white" }}
                       />
                     </TableCell>

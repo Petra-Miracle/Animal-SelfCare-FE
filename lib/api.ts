@@ -126,8 +126,10 @@ export function listPublicReports(params: ReportListParams) {
   );
 }
 
-export function getPublicReport(id: string) {
-  return apiFetch<{ report: PublicReport }>(`/reports/${id}`);
+export async function getPublicReport(id: string) {
+  const res = await apiFetch<{ report: PublicReport } | PublicReport>(`/reports/${id}`);
+  if (res && typeof res === "object" && "report" in res) return res as { report: PublicReport };
+  return { report: res as PublicReport };
 }
 
 export async function listAnimalClasses(): Promise<AnimalClass[]> {
@@ -136,7 +138,9 @@ export async function listAnimalClasses(): Promise<AnimalClass[]> {
 }
 
 export function listPublicGuides() {
-  return apiFetch<{ guides: CareGuide[] }>(`/care-guides`);
+  return apiFetch<{ guides: CareGuide[] } | CareGuide[]>(`/care-guides`).then((res) => ({
+    guides: asArray<CareGuide>(res, "guides"),
+  }));
 }
 
 export interface CreateReportPayload {
@@ -166,11 +170,16 @@ export function createReport(p: CreateReportPayload) {
   if (p.locationLng !== undefined) form.append("locationLng", String(p.locationLng));
   form.append("foundAt", p.foundAt);
   if (p.animalTypeGuess) form.append("animalTypeGuess", p.animalTypeGuess);
-  for (const t of p.conditionTags) form.append("conditionTags", t);
+  // Kirim conditionTags sebagai JSON string — backend menerima "string atau array string".
+  // FormData.append berulang untuk key sama tidak dijamin dibaca sebagai array oleh semua parser.
+  if (p.conditionTags.length > 0) form.append("conditionTags", JSON.stringify(p.conditionTags));
   form.append("animalCount", String(p.animalCount));
   if (p.notes) form.append("notes", p.notes);
   form.append("isEmergency", p.isEmergency ? "true" : "false");
-  return apiFetch<{ report: PublicReport }>(`/reports`, { method: "POST", form });
+  return apiFetch<{ report: PublicReport } | PublicReport>(`/reports`, { method: "POST", form }).then((res) => {
+    if (res && typeof res === "object" && "report" in res) return res as { report: PublicReport };
+    return { report: res as PublicReport };
+  });
 }
 
 /* ---------- Auth ---------- */
@@ -195,8 +204,10 @@ export function listAdminReports(params: ReportListParams, token?: string) {
   );
 }
 
-export function getAdminReport(id: string, token?: string) {
-  return apiFetch<{ report: AdminReport }>(`/admin/reports/${id}`, { token });
+export async function getAdminReport(id: string, token?: string) {
+  const res = await apiFetch<{ report: AdminReport } | AdminReport>(`/admin/reports/${id}`, { token });
+  if (res && typeof res === "object" && "report" in res) return res as { report: AdminReport };
+  return { report: res as AdminReport };
 }
 
 export function verifyReport(id: string, isEmergency?: boolean, token?: string) {
@@ -266,7 +277,9 @@ export function deactivateUser(id: string, token?: string) {
 }
 
 export function listGuidesForReview(status?: CareGuideStatus | "", token?: string) {
-  return apiFetch<{ guides: CareGuide[] }>(`/admin/care-guides${qs({ status: status || undefined })}`, { token });
+  return apiFetch<{ guides: CareGuide[] } | CareGuide[]>(`/admin/care-guides${qs({ status: status || undefined })}`, { token }).then((res) => ({
+    guides: asArray<CareGuide>(res, "guides"),
+  }));
 }
 
 export function reviewGuide(id: string, status: "DITINJAU" | "AKTIF" | "DINONAKTIFKAN", token?: string) {
@@ -314,7 +327,9 @@ export function startHandling(id: string, reason?: string, token?: string) {
 }
 
 export function listMyGuides(token?: string) {
-  return apiFetch<{ guides: CareGuide[] }>(`/facility/care-guides`, { token });
+  return apiFetch<{ guides: CareGuide[] } | CareGuide[]>(`/facility/care-guides`, { token }).then((res) => ({
+    guides: asArray<CareGuide>(res, "guides"),
+  }));
 }
 
 export function createGuide(input: { title: string; content: string; sourceNote?: string }, token?: string) {

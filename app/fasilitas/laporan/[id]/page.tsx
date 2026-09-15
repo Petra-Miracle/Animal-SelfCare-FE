@@ -185,13 +185,13 @@ export default function FacilityReportDetailPage({ params }: { params: { id: str
             <p className="mb-2 text-xs font-extrabold uppercase tracking-wide text-stone-500">Kontak pelapor</p>
             <HeroUser
               name={report.reporterName}
-              description={`${report.reporterPhone} · ${report.reporterEmail}`}
+              description={[report.reporterPhone, report.reporterEmail].filter(Boolean).join(" · ") || "-"}
               avatarProps={{ name: report.reporterName.charAt(0).toUpperCase(), className: "bg-brand-600 text-white" }}
             />
           </section>
 
           <div className="grid gap-3 text-sm sm:grid-cols-2">
-            <p className="rounded-2xl bg-stone-50 p-3"><span className="text-xs text-stone-500">Jenis (tebakan)</span><br /><strong>{report.animalTypeGuess ?? "-"}</strong></p>
+            <p className="rounded-2xl bg-stone-50 p-3"><span className="text-xs text-stone-500">Jenis (tebakan)</span><br /><strong>{report.animalTypeGuess || "-"}</strong></p>
             <p className="rounded-2xl bg-stone-50 p-3"><span className="text-xs text-stone-500">Jumlah</span><br /><strong>{report.animalCount} ekor</strong></p>
           </div>
           {report.conditionTags.length > 0 ? (

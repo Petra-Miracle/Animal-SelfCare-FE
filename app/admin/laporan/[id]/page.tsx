@@ -102,7 +102,7 @@ export default function AdminReportDetailPage({ params }: { params: { id: string
             <p className="mb-2 text-xs font-extrabold uppercase tracking-wide text-amber-800">Kontak pelapor (rahasia)</p>
             <HeroUser
               name={report.reporterName}
-              description={`${report.reporterPhone} · ${report.reporterEmail}`}
+              description={[report.reporterPhone, report.reporterEmail].filter(Boolean).join(" · ") || "-"}
               avatarProps={{ name: report.reporterName.charAt(0).toUpperCase(), className: "bg-amber-600 text-white" }}
             />
           </section>
@@ -110,7 +110,7 @@ export default function AdminReportDetailPage({ params }: { params: { id: string
           <dl className="grid gap-3 text-sm sm:grid-cols-3">
             <div className="flex items-start gap-2 rounded-2xl bg-stone-50 p-3">
               <PawPrint className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" aria-hidden />
-              <div><dt className="text-xs text-stone-500">Jenis (tebakan)</dt><dd className="font-bold">{report.animalTypeGuess ?? "-"}</dd></div>
+              <div><dt className="text-xs text-stone-500">Jenis (tebakan)</dt><dd className="font-bold">{report.animalTypeGuess || "-"}</dd></div>
             </div>
             <div className="flex items-start gap-2 rounded-2xl bg-stone-50 p-3">
               <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" aria-hidden />
