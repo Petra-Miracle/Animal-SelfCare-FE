@@ -15,6 +15,11 @@ Backend: https://github.com/Petra-Miracle/Animal-SelfCare-BE
 - **Flowbite React** — pola konsisten untuk tampilan konten (Footer, Accordion panduan, Timeline alur)
 - **Lucide React** — semua ikon
 - **Framer Motion** — animasi transisi secukupnya (fade/slide antar langkah & kartu)
+- Navbar memakai komponen `components/pro-navbar.tsx` — replika setia API
+  [HeroUI Pro Navbar](https://heroui.pro/docs/react/components/navbar) (dot-notation:
+  `Navbar.Header/Brand/Content/Item/MenuToggle/Menu/MenuItem`, `hideOnScroll`,
+  routing Next.js via prop `navigate`). Paket `@heroui-pro` asli sengaja tidak dipakai
+  karena butuh lisensi berbayar + React 19 + Tailwind v4.
 - Bahasa antarmuka: **Bahasa Indonesia**, mobile-first
 
 ## Prasyarat
