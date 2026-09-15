@@ -153,8 +153,7 @@ export default function LaporanListPage() {
           <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
             <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-3">
               <Select
-                label="Status"
-                placeholder="Semua"
+                placeholder="Status"
                 selectedKeys={status ? [status] : []}
                 onSelectionChange={(k) => {
                   setStatus((Array.from(k)[0] as string) ?? "");
@@ -169,8 +168,7 @@ export default function LaporanListPage() {
                 ))}
               </Select>
               <Input
-                label="Jenis hewan"
-                placeholder="cth. Anjing"
+                placeholder="Jenis hewan"
                 value={animalType}
                 onValueChange={(v) => {
                   setAnimalType(v);
@@ -179,8 +177,7 @@ export default function LaporanListPage() {
                 aria-label="Filter jenis hewan"
               />
               <Input
-                label="Wilayah"
-                placeholder="cth. Oebobo"
+                placeholder="Wilayah"
                 value={region}
                 onValueChange={(v) => {
                   setRegion(v);
