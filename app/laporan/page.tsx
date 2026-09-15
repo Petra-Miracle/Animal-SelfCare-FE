@@ -129,6 +129,7 @@ export default function LaporanListPage() {
       {/* Pencarian + filter */}
       <div className="rounded-3xl border border-stone-200/80 bg-white p-4 shadow-card">
         <div className="flex flex-col gap-3">
+          {/* Baris pencarian */}
           <div className="flex gap-2">
             <Input
               ref={searchRef}
@@ -148,49 +149,51 @@ export default function LaporanListPage() {
               <span className="hidden sm:inline">Cari</span>
             </Button>
           </div>
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-[1fr_1fr_1fr_auto]">
-            <Select
-              label="Status"
-              placeholder="Semua"
-              selectedKeys={status ? [status] : []}
-              onSelectionChange={(k) => {
-                setStatus((Array.from(k)[0] as string) ?? "");
-                setPage(1);
-              }}
-              aria-label="Filter status"
-            >
-              {ALL_STATUSES.map((s) => (
-                <SelectItem key={s}>
-                  {STATUS_META[s].label}
-                </SelectItem>
-              ))}
-            </Select>
-            <Input
-              label="Jenis hewan"
-              placeholder="cth. Anjing"
-              value={animalType}
-              onValueChange={(v) => {
-                setAnimalType(v);
-                setPage(1);
-              }}
-              aria-label="Filter jenis hewan"
-            />
-            <Input
-              label="Wilayah"
-              placeholder="cth. Oebobo"
-              value={region}
-              onValueChange={(v) => {
-                setRegion(v);
-                setPage(1);
-              }}
-              aria-label="Filter wilayah"
-            />
-            <div className="col-span-2 flex items-end justify-between gap-2 lg:col-span-1 lg:flex-col lg:items-stretch">
+          {/* Baris filter + sort */}
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+            <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-3">
+              <Select
+                label="Status"
+                placeholder="Semua"
+                selectedKeys={status ? [status] : []}
+                onSelectionChange={(k) => {
+                  setStatus((Array.from(k)[0] as string) ?? "");
+                  setPage(1);
+                }}
+                aria-label="Filter status"
+              >
+                {ALL_STATUSES.map((s) => (
+                  <SelectItem key={s}>
+                    {STATUS_META[s].label}
+                  </SelectItem>
+                ))}
+              </Select>
+              <Input
+                label="Jenis hewan"
+                placeholder="cth. Anjing"
+                value={animalType}
+                onValueChange={(v) => {
+                  setAnimalType(v);
+                  setPage(1);
+                }}
+                aria-label="Filter jenis hewan"
+              />
+              <Input
+                label="Wilayah"
+                placeholder="cth. Oebobo"
+                value={region}
+                onValueChange={(v) => {
+                  setRegion(v);
+                  setPage(1);
+                }}
+                aria-label="Filter wilayah"
+              />
+            </div>
+            <div className="flex items-center gap-2">
               <ButtonGroup variant="flat" color="success" size="sm" aria-label="Urutan">
                 {SORTS.map((s) => (
                   <Tooltip key={s.key} content={s.label} placement="top" size="sm">
                     <Button
-                      isIconOnly={false}
                       aria-pressed={sort === s.key}
                       className={sort === s.key ? "bg-brand-600 font-bold text-white" : ""}
                       onPress={() => {
@@ -200,7 +203,7 @@ export default function LaporanListPage() {
                       aria-label={`Urutkan: ${s.label}`}
                     >
                       <s.icon className="h-4 w-4" aria-hidden />
-                      <span className="hidden xl:inline">{s.label}</span>
+                      <span className="hidden sm:inline">{s.label}</span>
                     </Button>
                   </Tooltip>
                 ))}
