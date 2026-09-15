@@ -2,21 +2,55 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Warna merek Animal SelfCare: hijau zamrud + aksen oranye */
-:root {
-  --asc-brand: 5 150 105;
-}
-
 html {
   scroll-behavior: smooth;
 }
 
 body {
-  @apply bg-stone-50 text-stone-900 antialiased;
+  @apply bg-stone-50 font-sans text-stone-900 antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  @apply bg-brand-200 text-brand-900;
+}
+
+/* Scrollbar ramping */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(214 211 209) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  @apply rounded-full bg-stone-300;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+  /* Latar mesh gradient untuk hero */
+  .bg-hero-mesh {
+    background:
+      radial-gradient(42rem 22rem at 85% -10%, rgb(18 183 106 / 0.22), transparent 60%),
+      radial-gradient(36rem 20rem at -10% 20%, rgb(56 189 248 / 0.18), transparent 60%),
+      radial-gradient(30rem 18rem at 50% 110%, rgb(251 191 36 / 0.14), transparent 60%),
+      linear-gradient(180deg, #ecfdf3 0%, #f5f5f4 100%);
+  }
+  .bg-dark-mesh {
+    background:
+      radial-gradient(40rem 20rem at 90% 0%, rgb(18 183 106 / 0.35), transparent 60%),
+      radial-gradient(34rem 22rem at 0% 100%, rgb(14 165 183 / 0.3), transparent 60%),
+      linear-gradient(135deg, #052e22 0%, #022c22 55%, #082f2e 100%);
+  }
+  .bg-card-dots {
+    background-image: radial-gradient(rgb(255 255 255 / 0.22) 1px, transparent 1px);
+    background-size: 14px 14px;
   }
 }

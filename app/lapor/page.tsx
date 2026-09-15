@@ -5,12 +5,13 @@
    Foto dikirim bersama form (multipart/form-data); validasi ukuran/tipe di klien
    dengan pesan & tombol coba-lagi yang jelas untuk jaringan lambat. */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ComponentProps } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowLeft,
   ArrowRight,
+  CalendarClock,
   Camera,
   Check,
   CircleAlert,
@@ -18,22 +19,37 @@ import {
   ImagePlus,
   LoaderCircle,
   MapPin,
-  Trash,
   X,
 } from "lucide-react";
 import {
+  Alert,
+  Autocomplete,
+  AutocompleteItem,
   Button,
   Card,
   CardBody,
   Checkbox,
   Chip,
+  Code,
+  DatePicker,
   Input,
+  NumberInput,
   Progress,
-  Select,
-  SelectItem,
+  Slider,
   Switch,
   Textarea,
 } from "@heroui/react";
+import { CalendarDateTime, getLocalTimeZone, now, toCalendarDateTime } from "@internationalized/date";
+
+/* Nilai DatePicker sesuai tipe yang diharapkan komponen HeroUI
+   (salinan @internationalized/date milik HeroUI berbeda identitas nominal
+   dengan salinan root — konversi dibatasi di helper ini). */
+type PickerValue = ComponentProps<typeof DatePicker>["value"];
+const toPickerValue = (v: CalendarDateTime | null): PickerValue =>
+  (v ?? null) as unknown as PickerValue;
+const fromPickerValue = (v: PickerValue): CalendarDateTime | null =>
+  (v ?? null) as unknown as CalendarDateTime | null;
+import { ApiError } from "@/lib/types";
 import { apiErrorMessage, createReport, listAnimalClasses } from "@/lib/api";
 import { useToast } from "@/lib/toast";
 import type { AnimalClass } from "@/lib/types";
@@ -59,20 +75,19 @@ export default function LaporPage() {
   const [photoNotice, setPhotoNotice] = useState<string | null>(null);
 
   const [locationText, setLocationText] = useState("");
-  const [foundAt, setFoundAt] = useState(() => {
-    const d = new Date();
-    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-    return d.toISOString().slice(0, 16);
-  });
+  const [foundAt, setFoundAt] = useState<CalendarDateTime | null>(() =>
+    toCalendarDateTime(now(getLocalTimeZone()))
+  );
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
 
-  const [animalTypeGuess, setAnimalTypeGuess] = useState("");
+  const [animalTypeKey, setAnimalTypeKey] = useState<string | number | null>(null);
+  const [animalTypeInput, setAnimalTypeInput] = useState("");
   const [animalClasses, setAnimalClasses] = useState<AnimalClass[]>([]);
   const [conditionTags, setConditionTags] = useState<string[]>([]);
   const [customTag, setCustomTag] = useState("");
-  const [animalCount, setAnimalCount] = useState("1");
+  const [animalCount, setAnimalCount] = useState(1);
   const [notes, setNotes] = useState("");
   const [isEmergency, setIsEmergency] = useState(false);
 
@@ -83,6 +98,7 @@ export default function LaporPage() {
 
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitCode, setSubmitCode] = useState<string | undefined>(undefined);
   const [doneId, setDoneId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -96,7 +112,7 @@ export default function LaporPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const classNames = useMemo(() => animalClasses.map((c) => c.name), [animalClasses]);
+  const classItems = animalClasses.map((c) => ({ key: c.name, label: c.name }));
 
   const addFiles = (files: FileList | File[]) => {
     setPhotoNotice(null);
@@ -164,8 +180,8 @@ export default function LaporPage() {
       if (!foundAt) return "Isi kapan hewan ditemukan.";
     }
     if (step === 2) {
-      const n = Number(animalCount);
-      if (!Number.isInteger(n) || n < 1 || n > 50) return "Jumlah hewan harus 1–50 ekor.";
+      if (!Number.isInteger(animalCount) || animalCount < 1 || animalCount > 50)
+        return "Jumlah hewan harus 1–50 ekor.";
     }
     if (step === 3) {
       if (reporterName.trim().length < 2) return "Isi nama pelapor (min. 2 huruf).";
@@ -194,8 +210,10 @@ export default function LaporPage() {
     }
     setSubmitting(true);
     setSubmitError(null);
+    setSubmitCode(undefined);
     try {
       const validPhotos = photos.filter((p) => !p.error).map((p) => p.file);
+      if (!foundAt) throw new Error("Isi kapan hewan ditemukan.");
       const res = await createReport({
         photos: validPhotos,
         reporterName: reporterName.trim(),
@@ -204,10 +222,10 @@ export default function LaporPage() {
         locationText: locationText.trim(),
         locationLat: coords?.lat,
         locationLng: coords?.lng,
-        foundAt: new Date(foundAt).toISOString(),
-        animalTypeGuess: animalTypeGuess.trim() || undefined,
+        foundAt: foundAt.toDate(getLocalTimeZone()).toISOString(),
+        animalTypeGuess: animalTypeInput.trim() || undefined,
         conditionTags,
-        animalCount: Number(animalCount),
+        animalCount,
         notes: notes.trim() || undefined,
         isEmergency,
       });
@@ -215,7 +233,9 @@ export default function LaporPage() {
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (e) {
       const msg = apiErrorMessage(e, "Laporan gagal dikirim.");
-      setSubmitError(msg);
+      const code = e instanceof ApiError ? e.code : undefined;
+      setSubmitError(code ? `${msg}` : msg);
+      setSubmitCode(code);
       toast.error(msg);
     } finally {
       setSubmitting(false);
@@ -391,13 +411,17 @@ export default function LaporPage() {
                     </p>
                   ) : null}
                 </div>
-                <Input
-                  type="datetime-local"
+                <DatePicker
                   label="Kapan hewan ditemukan"
-                  value={foundAt}
-                  onValueChange={setFoundAt}
+                  granularity="minute"
+                  hourCycle={24}
+                  showMonthAndYearPickers
+                  maxValue={toPickerValue(toCalendarDateTime(now(getLocalTimeZone())))}
+                  value={toPickerValue(foundAt)}
+                  onChange={(v) => setFoundAt(fromPickerValue(v))}
                   isRequired
                   aria-label="Kapan hewan ditemukan"
+                  startContent={<CalendarClock className="h-4 w-4 text-stone-400" aria-hidden />}
                 />
               </CardBody>
             </Card>
@@ -409,33 +433,44 @@ export default function LaporPage() {
               <CardBody className="gap-4 p-5">
                 <h2 className="font-bold text-stone-900">Kondisi hewan</h2>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label htmlFor="jenis" className="mb-1 block text-sm font-medium text-stone-700">
-                      Perkiraan jenis hewan
-                    </label>
-                    <input
-                      id="jenis"
-                      list="kelas-hewan"
-                      value={animalTypeGuess}
-                      onChange={(e) => setAnimalTypeGuess(e.target.value)}
-                      placeholder="cth. Anjing, Kucing…"
-                      className="w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:bg-white"
+                  <Autocomplete
+                    label="Perkiraan jenis hewan"
+                    placeholder="Ketik atau pilih… (cth. Anjing)"
+                    defaultItems={classItems}
+                    allowsCustomValue
+                    selectedKey={animalTypeKey}
+                    onSelectionChange={(k) => {
+                      const key = k as string | number | null;
+                      setAnimalTypeKey(key);
+                      if (key !== null) setAnimalTypeInput(String(key));
+                    }}
+                    inputValue={animalTypeInput}
+                    onInputChange={setAnimalTypeInput}
+                    aria-label="Perkiraan jenis hewan"
+                  >
+                    {(item) => <AutocompleteItem key={item.key}>{item.label}</AutocompleteItem>}
+                  </Autocomplete>
+                  <div className="space-y-2">
+                    <NumberInput
+                      label="Jumlah hewan (ekor)"
+                      minValue={1}
+                      maxValue={50}
+                      value={animalCount}
+                      onValueChange={setAnimalCount}
+                      aria-label="Jumlah hewan"
                     />
-                    <datalist id="kelas-hewan">
-                      {classNames.map((n) => (
-                        <option key={n} value={n} />
-                      ))}
-                    </datalist>
+                    <Slider
+                      aria-label="Geser untuk jumlah hewan"
+                      minValue={1}
+                      maxValue={10}
+                      step={1}
+                      value={Math.min(animalCount, 10)}
+                      onChange={(v) => setAnimalCount(v as number)}
+                      color="success"
+                      size="sm"
+                      showSteps
+                    />
                   </div>
-                  <Input
-                    type="number"
-                    min={1}
-                    max={50}
-                    label="Jumlah hewan (ekor)"
-                    value={animalCount}
-                    onValueChange={setAnimalCount}
-                    aria-label="Jumlah hewan"
-                  />
                 </div>
                 <div>
                   <p id="label-kondisi" className="mb-2 text-sm font-medium text-stone-700">
@@ -520,10 +555,12 @@ export default function LaporPage() {
             <Card>
               <CardBody className="gap-4 p-5">
                 <h2 className="font-bold text-stone-900">Kontak pelapor & kirim</h2>
-                <p className="rounded-xl bg-emerald-50 px-3 py-2 text-xs leading-relaxed text-emerald-900">
-                  Tanpa perlu akun. Kontak Anda <strong>hanya</strong> terlihat oleh admin & fasilitas penangan — tidak
-                  pernah tampil di halaman publik.
-                </p>
+                <Alert
+                  color="success"
+                  variant="faded"
+                  title="Tanpa perlu akun — privasi terjaga"
+                  description="Kontak Anda hanya terlihat oleh admin & fasilitas penangan, tidak pernah tampil di halaman publik."
+                />
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Input label="Nama pelapor" placeholder="Nama Anda" value={reporterName} onValueChange={setReporterName} isRequired aria-label="Nama pelapor" />
                   <Input label="Nomor HP aktif" placeholder="cth. 0812xxxxxxx" inputMode="tel" value={reporterPhone} onValueChange={setReporterPhone} isRequired aria-label="Nomor HP aktif" />
@@ -535,9 +572,17 @@ export default function LaporPage() {
                   </span>
                 </Checkbox>
                 {submitError ? (
-                  <p role="alert" className="flex items-start gap-1.5 rounded-xl bg-red-50 px-3 py-2 text-xs text-red-700">
-                    <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden /> {submitError}
-                  </p>
+                  <Alert
+                    color="danger"
+                    variant="faded"
+                    title="Laporan gagal dikirim"
+                    description={
+                      <span className="flex flex-wrap items-center gap-2">
+                        {submitError}
+                        {submitCode ? <Code color="danger" size="sm">{submitCode}</Code> : null}
+                      </span>
+                    }
+                  />
                 ) : null}
               </CardBody>
             </Card>

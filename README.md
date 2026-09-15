@@ -21,6 +21,17 @@ Backend: https://github.com/Petra-Miracle/Animal-SelfCare-BE
   routing Next.js via prop `navigate`). Paket `@heroui-pro` asli sengaja tidak dipakai
   karena butuh lisensi berbayar + React 19 + Tailwind v4.
 - Bahasa antarmuka: **Bahasa Indonesia**, mobile-first
+- Font **Plus Jakarta Sans**, warna merek `brand` custom + radius besar via plugin HeroUI
+
+Komponen HeroUI v2 yang dipakai di seluruh aplikasi: Accordion, Alert, Autocomplete,
+Avatar, Badge, Breadcrumbs, Button, ButtonGroup, Card, Checkbox, Chip, CircularProgress,
+Code, DatePicker, Divider, Drawer, Dropdown, Form, Image, Input, Kbd, Link, Modal,
+NumberInput, Pagination, Popover, Progress, RadioGroup, ScrollShadow, Select, Skeleton,
+Slider, Snippet, Spacer (implisit), Spinner, Switch, Table, Tabs, Textarea, Toast
+(`addToast`), Tooltip, User — plus Flowbite (Footer, Accordion panduan, Timeline alur).
+Pengecualian yang sengaja tidak dipakai: Calendar/RangeCalendar/DateRangePicker/
+DateInput/TimeInput mandiri (tak ada kasus filter tanggal di API), InputOtp (tak ada alur
+OTP di backend), Listbox mandiri (sudah tercakup via Dropdown/Autocomplete).
 
 ## Prasyarat
 

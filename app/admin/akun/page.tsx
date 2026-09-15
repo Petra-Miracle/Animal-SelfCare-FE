@@ -17,6 +17,9 @@ import {
   ModalHeader,
   Select,
   SelectItem,
+  Skeleton,
+  Tooltip,
+  User as HeroUser,
   useDisclosure,
 } from "@heroui/react";
 import {
@@ -30,7 +33,7 @@ import {
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/lib/toast";
 import PageHeader from "@/components/PageHeader";
-import { EmptyState, ErrorState, LoadingState } from "@/components/States";
+import { EmptyState, ErrorState } from "@/components/States";
 import { formatDateID } from "@/lib/utils";
 import type { CareFacility, ManagedUser, UserRole } from "@/lib/types";
 
@@ -121,14 +124,20 @@ export default function AdminUsersPage() {
         title="Kelola Akun"
         description="Akun Admin RS wajib terikat ke satu fasilitas."
         actions={
-          <Button color="success" startContent={<Plus className="h-4 w-4" aria-hidden />} onPress={onOpen}>
+          <Button color="success" className="bg-brand-600 font-semibold" startContent={<Plus className="h-4 w-4" aria-hidden />} onPress={onOpen}>
             Buat Akun
           </Button>
         }
       />
 
       {loading ? (
-        <LoadingState label="Memuat akun…" />
+        <div className="grid gap-3 md:grid-cols-2" aria-hidden>
+          {[0, 1, 2, 3].map((i) => (
+            <Skeleton key={i} className="rounded-3xl">
+              <div className="h-28" />
+            </Skeleton>
+          ))}
+        </div>
       ) : error ? (
         <ErrorState message={error} onRetry={load} />
       ) : items.length === 0 ? (
@@ -136,30 +145,29 @@ export default function AdminUsersPage() {
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
           {items.map((u) => (
-            <Card key={u.id} className={`border shadow-sm ${u.isActive ? "border-stone-100" : "border-stone-200 opacity-70"}`}>
-              <CardBody className="gap-2 p-4">
+            <Card key={u.id} className={`border shadow-card ${u.isActive ? "border-stone-200/70" : "border-stone-200 opacity-70"}`}>
+              <CardBody className="gap-2.5 p-4 sm:p-5">
                 <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-stone-100 text-stone-600" aria-hidden>
-                      <Mail className="h-4 w-4" />
-                    </span>
-                    <div>
-                      <p className="max-w-56 truncate text-sm font-bold text-stone-900">{u.email}</p>
-                      <p className="text-xs text-stone-500">
-                        {u.role === "SUPERADMIN" ? "SuperAdmin" : `Admin RS · ${u.facilityId ? (facilityName[u.facilityId] ?? "Fasilitas") : "-"}`}
-                      </p>
-                    </div>
-                  </div>
+                  <HeroUser
+                    name={u.email}
+                    description={u.role === "SUPERADMIN" ? "SuperAdmin" : `Admin RS · ${u.facilityId ? (facilityName[u.facilityId] ?? "Fasilitas") : "-"}`}
+                    avatarProps={{
+                      name: u.email.charAt(0).toUpperCase(),
+                      className: u.role === "SUPERADMIN" ? "bg-violet-600 text-white" : "bg-brand-600 text-white",
+                    }}
+                  />
                   <Chip size="sm" color={u.isActive ? "success" : "default"} variant="flat">
                     {u.isActive ? "Aktif" : "Nonaktif"}
                   </Chip>
                 </div>
                 <p className="text-xs text-stone-400">Dibuat {formatDateID(u.createdAt)}{u.phone ? ` · ${u.phone}` : ""}</p>
                 {u.isActive && u.id !== user?.id ? (
-                  <div>
-                    <Button size="sm" variant="light" color="danger" startContent={<UserX className="h-3.5 w-3.5" aria-hidden />} onPress={() => deactivate(u)}>
-                      Nonaktifkan
-                    </Button>
+                  <div className="border-t border-stone-100 pt-2">
+                    <Tooltip content="Cabut akses masuk akun ini" placement="top" size="sm">
+                      <Button size="sm" variant="light" color="danger" startContent={<UserX className="h-3.5 w-3.5" aria-hidden />} onPress={() => deactivate(u)}>
+                        Nonaktifkan
+                      </Button>
+                    </Tooltip>
                   </div>
                 ) : null}
               </CardBody>
@@ -174,8 +182,8 @@ export default function AdminUsersPage() {
             <>
               <ModalHeader>Buat akun baru</ModalHeader>
               <ModalBody className="gap-3">
-                <Input label="Email" type="email" value={email} onValueChange={setEmail} isRequired aria-label="Email akun" startContent={<Mail className="h-4 w-4 text-stone-400" aria-hidden />} />
-                <Input label="Kata sandi (min. 8 karakter)" type="password" value={password} onValueChange={setPassword} isRequired aria-label="Kata sandi akun" startContent={<KeyRound className="h-4 w-4 text-stone-400" aria-hidden />} />
+                <Input label="Email" type="email" value={email} onValueChange={setEmail} isRequired aria-label="Email akun" startContent={<Mail className="h-4 w-4 shrink-0 text-stone-400" aria-hidden />} />
+                <Input label="Kata sandi (min. 8 karakter)" type="password" value={password} onValueChange={setPassword} isRequired aria-label="Kata sandi akun" startContent={<KeyRound className="h-4 w-4 shrink-0 text-stone-400" aria-hidden />} />
                 <Input label="No. HP (opsional)" inputMode="tel" value={phone} onValueChange={setPhone} aria-label="Nomor HP akun" />
                 <Select label="Role" selectedKeys={[role]} onSelectionChange={(k) => {
                   const v = Array.from(k)[0] as UserRole;
@@ -201,7 +209,7 @@ export default function AdminUsersPage() {
               </ModalBody>
               <ModalFooter>
                 <Button variant="light" onPress={onClose}>Batal</Button>
-                <Button color="success" onPress={save} isLoading={busy}>Buat Akun</Button>
+                <Button color="success" className="bg-brand-600 font-semibold" onPress={save} isLoading={busy}>Buat Akun</Button>
               </ModalFooter>
             </>
           )}

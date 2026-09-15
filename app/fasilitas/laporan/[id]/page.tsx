@@ -1,12 +1,13 @@
 "use client";
 
-/* Detail klaim: hitung mundur 20 menit (claimExpiresAt), tombol konfirmasi
+/* Detail klaim: hitung mundur ring 20 menit (claimExpiresAt), tombol konfirmasi
    "Dalam Penanganan", tombol lepas klaim (+alasan). */
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Hourglass, Mail, MapPin, Phone, Stethoscope, Undo2, User } from "lucide-react";
+import { ArrowLeft, Hourglass, MapPin, Stethoscope, Undo2 } from "lucide-react";
 import {
+  Alert,
   Button,
   Card,
   CardBody,
@@ -17,15 +18,19 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
+  Snippet,
   Textarea,
+  Tooltip,
+  User as HeroUser,
   useDisclosure,
 } from "@heroui/react";
 import { apiErrorMessage, listFacilityReports, releaseClaim, startHandling } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { eventReportId, useRealtime } from "@/lib/sse";
 import { useToast } from "@/lib/toast";
-import CountdownTimer from "@/components/CountdownTimer";
+import ClaimCountdown from "@/components/ClaimCountdown";
 import StatusBadge from "@/components/StatusBadge";
+import PageHeader from "@/components/PageHeader";
 import { EmptyState, ErrorState, LoadingState } from "@/components/States";
 import { formatDateID } from "@/lib/utils";
 import type { AdminReport } from "@/lib/types";
@@ -140,48 +145,54 @@ export default function FacilityReportDetailPage({ params }: { params: { id: str
 
   return (
     <div className="space-y-4">
-      <Button as={Link} href="/fasilitas" variant="light" startContent={<ArrowLeft className="h-4 w-4" aria-hidden />}>
-        Laporan masuk
-      </Button>
+      <PageHeader
+        title="Detail Klaim"
+        crumbs={[{ href: "/fasilitas", label: "Laporan Masuk" }, { label: "Detail" }]}
+        actions={
+          <Snippet symbol="" size="sm" variant="bordered">
+            {report.id}
+          </Snippet>
+        }
+      />
 
       {isClaimed && mine && report.claimExpiresAt ? (
-        <div role="status" className="flex flex-wrap items-center gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4">
-          <Hourglass className="h-5 w-5 text-amber-700" aria-hidden />
-          <div className="flex-1 text-sm text-amber-900">
-            <p className="font-bold">Konfirmasi sebelum batas waktu habis</p>
+        <div role="status" className="flex flex-wrap items-center gap-3 rounded-3xl border border-amber-300 bg-gradient-to-r from-amber-50 to-orange-50 p-4 shadow-card">
+          <Hourglass className="h-5 w-5 shrink-0 text-amber-700" aria-hidden />
+          <div className="min-w-48 flex-1 text-sm text-amber-900">
+            <p className="font-extrabold">Konfirmasi sebelum batas waktu habis</p>
             <p className="text-xs">Tekan “Mulai Penanganan” sebelum hitungan nol, atau klaim otomatis dikembalikan.</p>
           </div>
-          <CountdownTimer expiresAt={report.claimExpiresAt} onExpire={() => load(true)} />
+          <ClaimCountdown expiresAt={report.claimExpiresAt} onExpire={() => load(true)} />
         </div>
       ) : null}
 
-      <Card>
-        <CardBody className="gap-4 p-5">
+      <Card className="overflow-hidden border border-stone-200/80 shadow-card">
+        <div className="bg-gradient-to-r from-brand-700 via-brand-600 to-teal-600 px-5 py-4 sm:px-6">
           <StatusBadge status={report.status} showEmergency={report.isEmergency} />
-          <h1 className="flex items-start gap-2 text-lg font-bold text-stone-900">
-            <MapPin className="mt-1 h-5 w-5 shrink-0 text-emerald-700" aria-hidden /> {report.locationText}
-          </h1>
-          <p className="text-xs text-stone-500">
+          <h2 className="mt-2 flex items-start gap-2 text-lg font-extrabold text-white">
+            <MapPin className="mt-1 h-5 w-5 shrink-0" aria-hidden /> {report.locationText}
+          </h2>
+          <p className="mt-1 text-xs text-white/85">
             {report.regionCity}
             {report.locationLat != null && report.locationLng != null
               ? ` · GPS ${report.locationLat.toFixed(5)}, ${report.locationLng.toFixed(5)}`
               : ""}
             {" · "}Ditemukan {formatDateID(report.foundAt)}
           </p>
-          <Divider />
-
-          <section aria-label="Kontak pelapor" className="rounded-xl bg-stone-50 p-3.5">
-            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-stone-500">Kontak pelapor</p>
-            <ul className="space-y-1.5 text-sm text-stone-800">
-              <li className="flex items-center gap-2"><User className="h-4 w-4 text-stone-400" aria-hidden /> {report.reporterName}</li>
-              <li className="flex items-center gap-2"><Phone className="h-4 w-4 text-stone-400" aria-hidden /> {report.reporterPhone}</li>
-              <li className="flex items-center gap-2"><Mail className="h-4 w-4 text-stone-400" aria-hidden /> {report.reporterEmail}</li>
-            </ul>
+        </div>
+        <CardBody className="gap-4 p-5 sm:p-6">
+          <section aria-label="Kontak pelapor" className="rounded-2xl bg-stone-50 p-4 ring-1 ring-stone-200/70">
+            <p className="mb-2 text-xs font-extrabold uppercase tracking-wide text-stone-500">Kontak pelapor</p>
+            <HeroUser
+              name={report.reporterName}
+              description={`${report.reporterPhone} · ${report.reporterEmail}`}
+              avatarProps={{ name: report.reporterName.charAt(0).toUpperCase(), className: "bg-brand-600 text-white" }}
+            />
           </section>
 
           <div className="grid gap-3 text-sm sm:grid-cols-2">
-            <p><span className="text-xs text-stone-500">Jenis (tebakan)</span><br /><strong>{report.animalTypeGuess ?? "-"}</strong></p>
-            <p><span className="text-xs text-stone-500">Jumlah</span><br /><strong>{report.animalCount} ekor</strong></p>
+            <p className="rounded-2xl bg-stone-50 p-3"><span className="text-xs text-stone-500">Jenis (tebakan)</span><br /><strong>{report.animalTypeGuess ?? "-"}</strong></p>
+            <p className="rounded-2xl bg-stone-50 p-3"><span className="text-xs text-stone-500">Jumlah</span><br /><strong>{report.animalCount} ekor</strong></p>
           </div>
           {report.conditionTags.length > 0 ? (
             <div className="flex flex-wrap gap-1.5">
@@ -190,13 +201,16 @@ export default function FacilityReportDetailPage({ params }: { params: { id: str
               ))}
             </div>
           ) : null}
-          {report.notes ? <p className="rounded-xl bg-stone-50 p-3 text-sm text-stone-700">{report.notes}</p> : null}
+          {report.notes ? <p className="rounded-2xl bg-stone-50 p-3.5 text-sm leading-relaxed text-stone-700">{report.notes}</p> : null}
+          <Divider />
 
           <div className="flex flex-wrap gap-2 pt-1">
             {isClaimed && mine && !isHandling ? (
-              <Button color="success" className="font-semibold" startContent={<Stethoscope className="h-4 w-4" aria-hidden />} isLoading={busy} onPress={confirm}>
-                Mulai Penanganan
-              </Button>
+              <Tooltip content="Ubah status menjadi DALAM_PENANGANAN" placement="top" size="sm">
+                <Button color="success" className="bg-brand-600 font-bold" startContent={<Stethoscope className="h-4 w-4" aria-hidden />} isLoading={busy} onPress={confirm}>
+                  Mulai Penanganan
+                </Button>
+              </Tooltip>
             ) : null}
             {isClaimed && mine ? (
               <Button variant="bordered" color="danger" startContent={<Undo2 className="h-4 w-4" aria-hidden />} onPress={onOpen}>
@@ -204,14 +218,15 @@ export default function FacilityReportDetailPage({ params }: { params: { id: str
               </Button>
             ) : null}
             {isHandling && mine ? (
-              <p className="w-full rounded-xl bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
-                Laporan dalam penanganan fasilitas Anda. Penyelesaian akhir (SELESAI) dilakukan oleh SuperAdmin.
-              </p>
+              <Alert
+                color="success"
+                variant="faded"
+                title="Dalam penanganan fasilitas Anda"
+                description="Penyelesaian akhir (SELESAI) dilakukan oleh SuperAdmin."
+              />
             ) : null}
             {!mine && isClaimed ? (
-              <p className="w-full rounded-xl bg-stone-100 px-3 py-2 text-xs text-stone-600">
-                Klaim sedang dipegang fasilitas lain.
-              </p>
+              <Alert color="default" variant="faded" title="Klaim dipegang fasilitas lain" />
             ) : null}
           </div>
         </CardBody>

@@ -4,13 +4,14 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, CalendarDays, Camera, Mail, MapPin, PawPrint, Phone, User } from "lucide-react";
-import { Button, Card, CardBody, Chip, Divider } from "@heroui/react";
+import { ArrowLeft, CalendarDays, Camera, MapPin, PawPrint } from "lucide-react";
+import { Alert, Button, Card, CardBody, Chip, Divider, Progress, Snippet, User as HeroUser } from "@heroui/react";
 import { apiErrorMessage, getAdminReport } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { eventReportId, useRealtime } from "@/lib/sse";
 import { useToast } from "@/lib/toast";
 import StatusBadge from "@/components/StatusBadge";
+import PageHeader from "@/components/PageHeader";
 import { EmptyState, ErrorState, LoadingState } from "@/components/States";
 import { formatDateID } from "@/lib/utils";
 import type { AdminReport } from "@/lib/types";
@@ -74,48 +75,50 @@ export default function AdminReportDetailPage({ params }: { params: { id: string
 
   return (
     <div className="space-y-4">
-      <Button as={Link} href="/admin/laporan" variant="light" startContent={<ArrowLeft className="h-4 w-4" aria-hidden />}>
-        Daftar laporan
-      </Button>
-      <Card>
-        <CardBody className="gap-4 p-5 sm:p-6">
+      <PageHeader
+        title="Detail Laporan"
+        crumbs={[{ href: "/admin", label: "Dashboard" }, { href: "/admin/laporan", label: "Laporan" }, { label: "Detail" }]}
+        actions={
+          <Snippet symbol="" size="sm" variant="bordered">
+            {report.id}
+          </Snippet>
+        }
+      />
+      <Card className="overflow-hidden border border-stone-200/80 shadow-card">
+        <div className="bg-gradient-to-r from-brand-700 via-brand-600 to-teal-600 px-5 py-4 sm:px-6">
           <StatusBadge status={report.status} showEmergency={report.isEmergency} />
-          <h1 className="flex items-start gap-2 text-lg font-bold text-stone-900">
-            <MapPin className="mt-1 h-5 w-5 shrink-0 text-emerald-700" aria-hidden /> {report.locationText}
-          </h1>
-          <p className="text-xs text-stone-500">
+          <h2 className="mt-2 flex items-start gap-2 text-lg font-extrabold text-white">
+            <MapPin className="mt-1 h-5 w-5 shrink-0" aria-hidden /> {report.locationText}
+          </h2>
+          <p className="mt-1 text-xs text-white/85">
             {report.regionCity}
             {report.locationLat != null && report.locationLng != null
               ? ` · GPS ${report.locationLat.toFixed(5)}, ${report.locationLng.toFixed(5)}`
               : " · tanpa GPS"}
           </p>
-          <Divider />
-
-          <section aria-label="Kontak pelapor" className="rounded-xl bg-amber-50 p-3.5">
-            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-amber-800">Kontak pelapor (rahasia)</p>
-            <ul className="space-y-1.5 text-sm text-stone-800">
-              <li className="flex items-center gap-2"><User className="h-4 w-4 text-stone-400" aria-hidden /> {report.reporterName}</li>
-              <li className="flex items-center gap-2"><Phone className="h-4 w-4 text-stone-400" aria-hidden /> {report.reporterPhone}</li>
-              <li className="flex items-center gap-2"><Mail className="h-4 w-4 text-stone-400" aria-hidden /> {report.reporterEmail}</li>
-            </ul>
+        </div>
+        <CardBody className="gap-4 p-5 sm:p-6">
+          <section aria-label="Kontak pelapor" className="rounded-2xl bg-amber-50 p-4 ring-1 ring-amber-200">
+            <p className="mb-2 text-xs font-extrabold uppercase tracking-wide text-amber-800">Kontak pelapor (rahasia)</p>
+            <HeroUser
+              name={report.reporterName}
+              description={`${report.reporterPhone} · ${report.reporterEmail}`}
+              avatarProps={{ name: report.reporterName.charAt(0).toUpperCase(), className: "bg-amber-600 text-white" }}
+            />
           </section>
 
-          <dl className="grid gap-3 text-sm sm:grid-cols-2">
-            <div className="flex items-start gap-2">
-              <PawPrint className="mt-0.5 h-4 w-4 text-stone-400" aria-hidden />
-              <div><dt className="text-xs text-stone-500">Jenis (tebakan)</dt><dd className="font-medium">{report.animalTypeGuess ?? "-"}</dd></div>
+          <dl className="grid gap-3 text-sm sm:grid-cols-3">
+            <div className="flex items-start gap-2 rounded-2xl bg-stone-50 p-3">
+              <PawPrint className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" aria-hidden />
+              <div><dt className="text-xs text-stone-500">Jenis (tebakan)</dt><dd className="font-bold">{report.animalTypeGuess ?? "-"}</dd></div>
             </div>
-            <div className="flex items-start gap-2">
-              <CalendarDays className="mt-0.5 h-4 w-4 text-stone-400" aria-hidden />
-              <div><dt className="text-xs text-stone-500">Ditemukan</dt><dd className="font-medium">{formatDateID(report.foundAt)}</dd></div>
+            <div className="flex items-start gap-2 rounded-2xl bg-stone-50 p-3">
+              <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" aria-hidden />
+              <div><dt className="text-xs text-stone-500">Ditemukan</dt><dd className="font-bold">{formatDateID(report.foundAt)}</dd></div>
             </div>
-            <div className="flex items-start gap-2">
-              <Camera className="mt-0.5 h-4 w-4 text-stone-400" aria-hidden />
-              <div><dt className="text-xs text-stone-500">Foto</dt><dd className="font-medium">{report.images.length} file</dd></div>
-            </div>
-            <div>
-              <dt className="text-xs text-stone-500">Jumlah</dt>
-              <dd className="font-medium">{report.animalCount} ekor</dd>
+            <div className="flex items-start gap-2 rounded-2xl bg-stone-50 p-3">
+              <Camera className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" aria-hidden />
+              <div><dt className="text-xs text-stone-500">Foto · Jumlah</dt><dd className="font-bold">{report.images.length} file · {report.animalCount} ekor</dd></div>
             </div>
           </dl>
 
@@ -127,25 +130,33 @@ export default function AdminReportDetailPage({ params }: { params: { id: string
             </div>
           ) : null}
           {report.notes ? (
-            <p className="rounded-xl bg-stone-50 p-3 text-sm leading-relaxed text-stone-700">{report.notes}</p>
+            <p className="rounded-2xl bg-stone-50 p-3.5 text-sm leading-relaxed text-stone-700">{report.notes}</p>
           ) : null}
           {report.classifications.length > 0 ? (
-            <ul className="space-y-1 text-sm text-stone-600">
+            <div className="space-y-2 rounded-2xl bg-stone-50 p-4">
+              <p className="text-xs font-bold text-stone-600">Identifikasi foto (otomatis)</p>
               {report.classifications.map((c) => (
-                <li key={c.id}>
-                  Identifikasi: {c.animalClassName ?? "-"} ({Math.round(c.confidence * 100)}%)
-                </li>
+                <div key={c.id} className="space-y-1">
+                  <div className="flex justify-between text-sm">
+                    <span className="font-semibold">{c.animalClassName ?? "-"}</span>
+                    <span className="tabular-nums text-stone-500">{Math.round(c.confidence * 100)}%</span>
+                  </div>
+                  <Progress value={Math.round(c.confidence * 100)} color="success" size="sm" aria-label="Keyakinan identifikasi" />
+                </div>
               ))}
-            </ul>
+            </div>
           ) : null}
+          <Divider />
           <p className="text-xs text-stone-400">
             Dibuat {formatDateID(report.createdAt)} · Diperbarui {formatDateID(report.updatedAt)}
             {report.claimExpiresAt ? ` · Batas klaim ${formatDateID(report.claimExpiresAt)}` : ""}
           </p>
-          <p className="text-xs text-stone-500">
-            Untuk verifikasi / penawaran / penutupan, gunakan tombol aksi di{" "}
-            <Link href="/admin/laporan" className="font-medium text-emerald-700 underline">daftar laporan</Link>.
-          </p>
+          <Alert
+            color="primary"
+            variant="faded"
+            title="Kelola dari daftar"
+            description="Verifikasi, penawaran, dan penutupan dilakukan lewat tombol aksi di halaman daftar laporan."
+          />
         </CardBody>
       </Card>
     </div>

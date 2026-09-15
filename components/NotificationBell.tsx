@@ -15,6 +15,7 @@ import {
   DropdownSection,
   DropdownTrigger,
   Spinner,
+  Tooltip,
 } from "@heroui/react";
 import { asArray, listNotifications, markNotificationRead } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -80,11 +81,15 @@ export default function NotificationBell() {
   return (
     <Dropdown placement="bottom-end">
       <DropdownTrigger>
-        <Button isIconOnly variant="light" aria-label={`Notifikasi${unread > 0 ? `, ${unread} belum dibaca` : ""}`}>
-          <Badge content={unread > 0 ? unread : undefined} color="danger" size="sm" isInvisible={unread === 0}>
-            <Bell className="h-5 w-5" aria-hidden />
-          </Badge>
-        </Button>
+        <span className="inline-flex">
+          <Tooltip content="Notifikasi" placement="bottom" size="sm">
+            <Button isIconOnly variant="light" aria-label={`Notifikasi${unread > 0 ? `, ${unread} belum dibaca` : ""}`}>
+              <Badge content={unread > 0 ? unread : undefined} color="danger" size="sm" isInvisible={unread === 0}>
+                <Bell className="h-5 w-5" aria-hidden />
+              </Badge>
+            </Button>
+          </Tooltip>
+        </span>
       </DropdownTrigger>
       <DropdownMenu
         aria-label="Daftar notifikasi"

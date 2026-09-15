@@ -28,17 +28,17 @@ export default function DashboardShell({
 
   return (
     <div className="pt-6 sm:pt-8">
-      <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">{title}</p>
-      <nav aria-label={title} className="sticky top-16 z-30 -mx-4 mt-2 bg-stone-50/95 px-4 py-2 backdrop-blur lg:static lg:mx-0 lg:bg-transparent lg:p-0">
-        <ul className="flex gap-1.5 overflow-x-auto lg:hidden">
+      <p className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1 text-xs font-bold uppercase tracking-wider text-brand-700 ring-1 ring-brand-200">{title}</p>
+      <nav aria-label={title} className="sticky top-16 z-30 -mx-4 mt-3 bg-stone-50/95 px-4 py-2 backdrop-blur lg:static lg:mx-0 lg:bg-transparent lg:p-0">
+        <ul className="flex gap-1.5 overflow-x-auto pb-0.5 lg:hidden">
           {items.map((it) => (
             <li key={it.href} className="shrink-0">
               <Link
                 href={it.href}
                 aria-current={active(it.href) ? "page" : undefined}
                 className={cn(
-                  "flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-2 text-xs font-medium",
-                  active(it.href) ? "bg-emerald-700 text-white" : "bg-white text-stone-600 ring-1 ring-stone-200"
+                  "flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-2 text-xs font-bold shadow-sm transition-all",
+                  active(it.href) ? "bg-brand-600 text-white shadow-card" : "bg-white text-stone-600 ring-1 ring-stone-200"
                 )}
               >
                 <it.icon className="h-3.5 w-3.5" aria-hidden /> {it.label}
@@ -47,17 +47,17 @@ export default function DashboardShell({
           ))}
         </ul>
       </nav>
-      <div className="mt-4 grid gap-6 lg:grid-cols-[220px_1fr]">
+      <div className="mt-4 grid gap-6 lg:grid-cols-[230px_1fr]">
         <aside className="hidden lg:block">
-          <ul className="sticky top-24 space-y-1 rounded-2xl border border-stone-200 bg-white p-2 shadow-sm">
+          <ul className="sticky top-24 space-y-1 rounded-3xl border border-stone-200/80 bg-white p-2.5 shadow-card">
             {items.map((it) => (
               <li key={it.href}>
                 <Link
                   href={it.href}
                   aria-current={active(it.href) ? "page" : undefined}
                   className={cn(
-                    "flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium",
-                    active(it.href) ? "bg-emerald-50 text-emerald-800" : "text-stone-600 hover:bg-stone-100"
+                    "flex items-center gap-2.5 rounded-2xl px-3.5 py-2.5 text-sm font-semibold transition-colors",
+                    active(it.href) ? "bg-brand-600 text-white shadow-card" : "text-stone-600 hover:bg-stone-100"
                   )}
                 >
                   <it.icon className="h-4 w-4" aria-hidden /> {it.label}

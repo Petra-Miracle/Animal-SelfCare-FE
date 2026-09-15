@@ -5,6 +5,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { BadgeCheck, Building, Pencil, Plus, Trash } from "lucide-react";
 import {
+  Alert,
+  Avatar,
   Button,
   Card,
   CardBody,
@@ -17,8 +19,11 @@ import {
   ModalHeader,
   Select,
   SelectItem,
+  Skeleton,
   Switch,
   Textarea,
+  Tooltip,
+  User as HeroUser,
   useDisclosure,
 } from "@heroui/react";
 import {
@@ -32,7 +37,7 @@ import {
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/lib/toast";
 import PageHeader from "@/components/PageHeader";
-import { EmptyState, ErrorState, LoadingState } from "@/components/States";
+import { EmptyState, ErrorState } from "@/components/States";
 import type { CareFacility } from "@/lib/types";
 
 interface FormState {
@@ -156,16 +161,29 @@ export default function AdminFacilitiesPage() {
     <div>
       <PageHeader
         title="Kelola Fasilitas"
-        description="Rumah sakit & organisasi mitra. Hanya yang terverifikasi yang bisa menerima penawaran laporan."
+        description="Rumah sakit & organisasi mitra."
         actions={
-          <Button color="success" startContent={<Plus className="h-4 w-4" aria-hidden />} onPress={openCreate}>
+          <Button color="success" className="bg-brand-600 font-semibold" startContent={<Plus className="h-4 w-4" aria-hidden />} onPress={openCreate}>
             Tambah Fasilitas
           </Button>
         }
       />
 
+      <Alert
+        color="warning"
+        variant="faded"
+        title="Hanya fasilitas terverifikasi yang bisa menerima penawaran laporan"
+        className="mb-4"
+      />
+
       {loading ? (
-        <LoadingState label="Memuat fasilitas…" />
+        <div className="grid gap-3 md:grid-cols-2" aria-hidden>
+          {[0, 1, 2, 3].map((i) => (
+            <Skeleton key={i} className="rounded-3xl">
+              <div className="h-36" />
+            </Skeleton>
+          ))}
+        </div>
       ) : error ? (
         <ErrorState message={error} onRetry={load} />
       ) : items.length === 0 ? (
@@ -173,51 +191,68 @@ export default function AdminFacilitiesPage() {
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
           {items.map((f) => (
-            <Card key={f.id} className="border border-stone-100 shadow-sm">
-              <CardBody className="gap-2.5 p-4">
+            <Card key={f.id} className="border border-stone-200/70 shadow-card transition-shadow hover:shadow-lift">
+              <CardBody className="gap-3 p-4 sm:p-5">
                 <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-start gap-2.5">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700" aria-hidden>
-                      <Building className="h-5 w-5" />
-                    </span>
+                  <div className="flex items-center gap-3">
+                    <Avatar
+                      name={f.name.charAt(0).toUpperCase()}
+                      className={f.isVerified ? "bg-brand-600 text-white" : "bg-stone-200 text-stone-600"}
+                      size="md"
+                    />
                     <div>
-                      <p className="flex items-center gap-1.5 text-sm font-bold text-stone-900">
+                      <p className="flex items-center gap-1.5 text-sm font-extrabold text-stone-900">
                         {f.name}
-                        {f.isVerified ? <BadgeCheck className="h-4 w-4 text-emerald-600" aria-label="Terverifikasi" /> : null}
+                        {f.isVerified ? <BadgeCheck className="h-4 w-4 shrink-0 text-brand-600" aria-label="Terverifikasi" /> : null}
                       </p>
-                      <p className="text-xs text-stone-500">{f.type === "HOSPITAL" ? "Rumah Sakit" : "Organisasi"} · {f.regionCity}</p>
+                      <p className="text-xs text-stone-500">
+                        {f.type === "HOSPITAL" ? "Rumah Sakit" : "Organisasi"} · {f.regionCity}
+                        {f.address ? ` · ${f.address}` : ""}
+                      </p>
                     </div>
                   </div>
                   <Chip size="sm" color={f.isVerified ? "success" : "default"} variant="flat">
                     {f.isVerified ? "Terverifikasi" : "Belum verif"}
                   </Chip>
                 </div>
-                <p className="text-xs text-stone-500">{f.email} · {f.phone}{f.address ? ` · ${f.address}` : ""}</p>
-                <div className="flex flex-wrap items-center gap-2 pt-1">
-                  <Switch
-                    size="sm"
-                    isSelected={f.isVerified}
-                    onValueChange={() => toggleVerified(f)}
-                    aria-label={`Verifikasi ${f.name}`}
-                  >
-                    <span className="text-xs">Verifikasi</span>
-                  </Switch>
+                <HeroUser
+                  name={f.email}
+                  description={f.phone}
+                  avatarProps={{ icon: <Building className="h-4 w-4" aria-hidden />, className: "bg-stone-100 text-stone-500" }}
+                />
+                <div className="flex flex-wrap items-center gap-2 border-t border-stone-100 pt-3">
+                  <Tooltip content={f.isVerified ? "Cabut verifikasi" : "Verifikasi fasilitas"} placement="top" size="sm">
+                    <Switch
+                      size="sm"
+                      color="success"
+                      isSelected={f.isVerified}
+                      onValueChange={() => toggleVerified(f)}
+                      aria-label={`Verifikasi ${f.name}`}
+                    >
+                      <span className="text-xs font-medium">Verifikasi</span>
+                    </Switch>
+                  </Tooltip>
                   <span className="flex-1" />
-                  <Button size="sm" variant="light" startContent={<Pencil className="h-3.5 w-3.5" aria-hidden />} onPress={() => openEdit(f)}>
-                    Ubah
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="light"
-                    color="danger"
-                    startContent={<Trash className="h-3.5 w-3.5" aria-hidden />}
-                    onPress={() => {
-                      setDeleting(f);
-                      onDelOpen();
-                    }}
-                  >
-                    Hapus
-                  </Button>
+                  <Tooltip content="Ubah data fasilitas" placement="top" size="sm">
+                    <Button size="sm" variant="light" isIconOnly aria-label={`Ubah ${f.name}`} onPress={() => openEdit(f)}>
+                      <Pencil className="h-4 w-4" aria-hidden />
+                    </Button>
+                  </Tooltip>
+                  <Tooltip content="Hapus fasilitas" placement="top" size="sm">
+                    <Button
+                      size="sm"
+                      variant="light"
+                      color="danger"
+                      isIconOnly
+                      aria-label={`Hapus ${f.name}`}
+                      onPress={() => {
+                        setDeleting(f);
+                        onDelOpen();
+                      }}
+                    >
+                      <Trash className="h-4 w-4" aria-hidden />
+                    </Button>
+                  </Tooltip>
                 </div>
               </CardBody>
             </Card>
@@ -247,13 +282,13 @@ export default function AdminFacilitiesPage() {
                   <Input label="Telepon" inputMode="tel" value={form.phone} onValueChange={(v) => setForm((f) => ({ ...f, phone: v }))} isRequired aria-label="Telepon fasilitas" />
                 </div>
                 <Textarea label="Alamat" value={form.address} onValueChange={(v) => setForm((f) => ({ ...f, address: v }))} minRows={2} aria-label="Alamat fasilitas" />
-                <Switch isSelected={form.isPaidPartner} onValueChange={(v) => setForm((f) => ({ ...f, isPaidPartner: v }))}>
+                <Switch isSelected={form.isPaidPartner} onValueChange={(v) => setForm((f) => ({ ...f, isPaidPartner: v }))} color="success">
                   <span className="text-sm">Mitra berbayar</span>
                 </Switch>
               </ModalBody>
               <ModalFooter>
                 <Button variant="light" onPress={onClose}>Batal</Button>
-                <Button color="success" onPress={save} isLoading={busy}>Simpan</Button>
+                <Button color="success" className="bg-brand-600 font-semibold" onPress={save} isLoading={busy}>Simpan</Button>
               </ModalFooter>
             </>
           )}

@@ -15,6 +15,19 @@ export const STATUS_META: Record<ReportStatus, { label: string; color: "default"
 
 export const ALL_STATUSES = Object.keys(STATUS_META) as ReportStatus[];
 
+/** Penjelasan tiap status — dipakai Tooltip pada badge di seluruh aplikasi. */
+export const STATUS_DESC: Record<ReportStatus, string> = {
+  BARU: "Baru masuk, menunggu verifikasi SuperAdmin.",
+  DIVERIFIKASI: "Valid, siap ditawarkan ke fasilitas.",
+  DITAWARKAN: "Sedang ditawarkan, menunggu ada fasilitas yang mengambil.",
+  DIAMBIL: "Sudah diklaim satu fasilitas, menunggu konfirmasi penanganan.",
+  DALAM_PENANGANAN: "Sedang dirawat oleh fasilitas penangan.",
+  SELESAI: "Penanganan selesai.",
+  DITOLAK: "Ditolak admin (bukan laporan valid).",
+  KADALUARSA: "Tidak ada tindak lanjut hingga batas waktu.",
+  DIBATALKAN: "Dibatalkan oleh admin.",
+};
+
 const MONTHS = [
   "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
   "Jul", "Agu", "Sep", "Okt", "Nov", "Des",

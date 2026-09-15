@@ -1,8 +1,9 @@
 "use client";
 
-/* Kelola draft panduan milik fasilitas sendiri + ajukan untuk ditinjau. */
+/* Kelola draft panduan milik fasilitas sendiri + ajukan untuk ditinjau.
+   Filter status via Tabs (data dari satu endpoint — filter sisi klien valid). */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { BookOpenText, Pencil, Plus, SendHorizontal } from "lucide-react";
 import {
   Button,
@@ -15,23 +16,35 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
+  Skeleton,
+  Tab,
+  Tabs,
   Textarea,
+  Tooltip,
   useDisclosure,
 } from "@heroui/react";
 import { apiErrorMessage, createGuide, listMyGuides, submitGuide, updateGuide } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/lib/toast";
 import PageHeader from "@/components/PageHeader";
-import { EmptyState, ErrorState, LoadingState } from "@/components/States";
+import { EmptyState, ErrorState } from "@/components/States";
 import { formatDateID } from "@/lib/utils";
-import type { CareGuide } from "@/lib/types";
+import type { CareGuide, CareGuideStatus } from "@/lib/types";
 
 const COLOR = { DRAFT: "default", DITINJAU: "warning", AKTIF: "success", DINONAKTIFKAN: "default" } as const;
+
+const TABS: Array<{ key: string; label: string; status: CareGuideStatus | "" }> = [
+  { key: "SEMUA", label: "Semua", status: "" },
+  { key: "DRAFT", label: "Draft", status: "DRAFT" },
+  { key: "DITINJAU", label: "Ditinjau", status: "DITINJAU" },
+  { key: "AKTIF", label: "Aktif", status: "AKTIF" },
+];
 
 export default function FacilityGuidesPage() {
   const { token } = useAuth();
   const toast = useToast();
   const [items, setItems] = useState<CareGuide[]>([]);
+  const [tab, setTab] = useState("SEMUA");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -58,6 +71,12 @@ export default function FacilityGuidesPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  const status = TABS.find((t) => t.key === tab)?.status ?? "";
+  const filtered = useMemo(
+    () => (status ? items.filter((g) => g.status === status) : items),
+    [items, status]
+  );
 
   const openCreate = () => {
     setEditing(null);
@@ -113,47 +132,72 @@ export default function FacilityGuidesPage() {
         title="Panduan Saya"
         description="Draft milik fasilitas Anda. Ajukan agar ditinjau dan diterbitkan ke halaman publik."
         actions={
-          <Button color="success" startContent={<Plus className="h-4 w-4" aria-hidden />} onPress={openCreate}>
+          <Button color="success" className="bg-brand-600 font-semibold" startContent={<Plus className="h-4 w-4" aria-hidden />} onPress={openCreate}>
             Tulis Panduan
           </Button>
         }
       />
 
-      {loading ? (
-        <LoadingState label="Memuat panduan…" />
-      ) : error ? (
-        <ErrorState message={error} onRetry={load} />
-      ) : items.length === 0 ? (
-        <EmptyState title="Belum ada panduan" hint="Tulis panduan pertolongan awal pertama untuk fasilitas Anda." />
-      ) : (
-        <div className="space-y-3">
-          {items.map((g) => (
-            <Card key={g.id} className="border border-stone-100 shadow-sm">
-              <CardBody className="gap-2 p-4">
-                <div className="flex flex-wrap items-center gap-2">
-                  <BookOpenText className="h-4 w-4 text-emerald-700" aria-hidden />
-                  <p className="text-sm font-bold text-stone-900">{g.title}</p>
-                  <Chip size="sm" color={COLOR[g.status]} variant="flat">{g.status}</Chip>
-                </div>
-                <p className="line-clamp-3 whitespace-pre-line text-sm text-stone-600">{g.content}</p>
-                <p className="text-xs text-stone-400">Diperbarui {formatDateID(g.updatedAt)}</p>
-                <div className="flex flex-wrap gap-2">
-                  {(g.status === "DRAFT" || g.status === "DINONAKTIFKAN") && (
-                    <>
-                      <Button size="sm" variant="light" startContent={<Pencil className="h-3.5 w-3.5" aria-hidden />} onPress={() => openEdit(g)}>
-                        Ubah
-                      </Button>
-                      <Button size="sm" color="success" variant="flat" startContent={<SendHorizontal className="h-3.5 w-3.5" aria-hidden />} onPress={() => submit(g)}>
-                        Ajukan Ditinjau
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </CardBody>
-            </Card>
-          ))}
-        </div>
-      )}
+      <Tabs
+        selectedKey={tab}
+        onSelectionChange={(k) => setTab(String(k))}
+        variant="solid"
+        color="success"
+        aria-label="Filter status panduan"
+        classNames={{ tabList: "bg-white shadow-card" }}
+      >
+        {TABS.map((t) => (
+          <Tab key={t.key} title={t.label} />
+        ))}
+      </Tabs>
+
+      <div className="mt-4">
+        {loading ? (
+          <div className="space-y-3" aria-hidden>
+            {[0, 1].map((i) => (
+              <Skeleton key={i} className="rounded-3xl">
+                <div className="h-36" />
+              </Skeleton>
+            ))}
+          </div>
+        ) : error ? (
+          <ErrorState message={error} onRetry={load} />
+        ) : filtered.length === 0 ? (
+          <EmptyState title="Belum ada panduan" hint="Tulis panduan pertolongan awal pertama untuk fasilitas Anda." />
+        ) : (
+          <div className="space-y-3">
+            {filtered.map((g) => (
+              <Card key={g.id} className="border border-stone-200/70 shadow-card">
+                <CardBody className="gap-2 p-4 sm:p-5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-brand-50 text-brand-700" aria-hidden>
+                      <BookOpenText className="h-4 w-4" />
+                    </span>
+                    <p className="text-sm font-extrabold text-stone-900">{g.title}</p>
+                    <Chip size="sm" color={COLOR[g.status]} variant="flat">{g.status}</Chip>
+                  </div>
+                  <p className="line-clamp-3 whitespace-pre-line text-sm text-stone-600">{g.content}</p>
+                  <p className="text-xs text-stone-400">Diperbarui {formatDateID(g.updatedAt)}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {(g.status === "DRAFT" || g.status === "DINONAKTIFKAN") && (
+                      <>
+                        <Button size="sm" variant="light" startContent={<Pencil className="h-3.5 w-3.5" aria-hidden />} onPress={() => openEdit(g)}>
+                          Ubah
+                        </Button>
+                        <Tooltip content="Kirim ke SuperAdmin untuk ditinjau" placement="top" size="sm">
+                          <Button size="sm" color="success" variant="flat" className="font-semibold" startContent={<SendHorizontal className="h-3.5 w-3.5" aria-hidden />} onPress={() => submit(g)}>
+                            Ajukan Ditinjau
+                          </Button>
+                        </Tooltip>
+                      </>
+                    )}
+                  </div>
+                </CardBody>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
 
       <Modal isOpen={isOpen} onOpenChange={onOpenChange} placement="center" scrollBehavior="inside">
         <ModalContent>
@@ -167,7 +211,7 @@ export default function FacilityGuidesPage() {
               </ModalBody>
               <ModalFooter>
                 <Button variant="light" onPress={onClose}>Batal</Button>
-                <Button color="success" onPress={save} isLoading={busy}>Simpan Draft</Button>
+                <Button color="success" className="bg-brand-600 font-semibold" onPress={save} isLoading={busy}>Simpan Draft</Button>
               </ModalFooter>
             </>
           )}

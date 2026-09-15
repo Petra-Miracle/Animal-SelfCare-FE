@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Eye, HandHelping } from "lucide-react";
-import { Button, Card, CardBody, Chip } from "@heroui/react";
+import { Alert, Button, Card, CardBody, CardFooter, Chip, Tooltip, User as HeroUser, useDisclosure } from "@heroui/react";
 import { ApiError } from "@/lib/types";
 import { apiErrorMessage, claimReport, listFacilityReports } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -16,7 +16,8 @@ import { useToast } from "@/lib/toast";
 import PageHeader from "@/components/PageHeader";
 import PaginationBar from "@/components/PaginationBar";
 import StatusBadge from "@/components/StatusBadge";
-import { EmptyState, ErrorState, LoadingState } from "@/components/States";
+import ReportQuickView from "@/components/ReportQuickView";
+import { EmptyState, ErrorState, TableSkeleton } from "@/components/States";
 import { formatDateID } from "@/lib/utils";
 import type { AdminReport } from "@/lib/types";
 
@@ -31,6 +32,8 @@ export default function FacilityReportsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [claimingId, setClaimingId] = useState<string | null>(null);
+  const [preview, setPreview] = useState<AdminReport | null>(null);
+  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
 
   const load = useCallback(
     async (silent = false) => {
@@ -90,10 +93,17 @@ export default function FacilityReportsPage() {
     <div>
       <PageHeader
         title="Laporan Masuk"
-        description="Laporan yang ditawarkan ke fasilitas Anda & yang sedang Anda tangani. Klaim bersifat rebutan — hanya satu fasilitas yang menang."
+        description="Laporan yang ditawarkan ke fasilitas Anda & yang sedang Anda tangani."
+      />
+      <Alert
+        color="primary"
+        variant="faded"
+        title="Klaim bersifat rebutan"
+        description="Hanya satu fasilitas yang menang per laporan. Klaim yang menang wajib dikonfirmasi (Mulai Penanganan) dalam 20 menit."
+        className="mb-4"
       />
       {loading ? (
-        <LoadingState label="Memuat laporan…" />
+        <TableSkeleton rows={4} />
       ) : error ? (
         <ErrorState message={error} onRetry={() => load()} />
       ) : items.length === 0 ? (
@@ -105,10 +115,10 @@ export default function FacilityReportsPage() {
         <>
           <div className="grid gap-3 md:grid-cols-2">
             {items.map((r) => (
-              <Card key={r.id} className="border border-stone-100 shadow-sm">
-                <CardBody className="gap-2.5 p-4">
+              <Card key={r.id} className="border border-stone-200/70 shadow-card transition-shadow hover:shadow-lift">
+                <CardBody className="gap-2.5 p-4 sm:p-5">
                   <StatusBadge status={r.status} showEmergency={r.isEmergency} />
-                  <p className="text-sm font-bold leading-snug text-stone-900">{r.locationText}</p>
+                  <p className="text-sm font-extrabold leading-snug text-stone-900">{r.locationText}</p>
                   <p className="text-xs text-stone-500">
                     {r.animalTypeGuess ?? "Jenis?"} · {r.animalCount} ekor · Ditemukan {formatDateID(r.foundAt)}
                   </p>
@@ -119,30 +129,43 @@ export default function FacilityReportsPage() {
                       ))}
                     </div>
                   ) : null}
-                  <div className="flex flex-wrap gap-2 pt-1">
+                  <HeroUser
+                    name={r.reporterName}
+                    description={r.reporterPhone}
+                    avatarProps={{ name: r.reporterName.charAt(0).toUpperCase(), size: "sm", className: "bg-stone-200 text-stone-600" }}
+                  />
+                </CardBody>
+                <CardFooter className="gap-2 border-t border-stone-100 bg-stone-50/60 px-4 py-3">
+                  <Tooltip content="Lihat detail & kelola klaim" placement="top" size="sm">
                     <Button as={Link} href={`/fasilitas/laporan/${r.id}`} size="sm" variant="bordered" startContent={<Eye className="h-3.5 w-3.5" aria-hidden />}>
                       Detail
                     </Button>
-                    {r.status === "DITAWARKAN" ? (
+                  </Tooltip>
+                  <Button size="sm" variant="light" onPress={() => { setPreview(r); onOpen(); }}>
+                    Pratinjau
+                  </Button>
+                  {r.status === "DITAWARKAN" ? (
+                    <Tooltip content="Hanya satu fasilitas yang bisa menang" placement="top" size="sm">
                       <Button
                         size="sm"
                         color="success"
-                        className="font-semibold"
+                        className="ml-auto bg-brand-600 font-bold"
                         startContent={<HandHelping className="h-4 w-4" aria-hidden />}
                         isLoading={claimingId === r.id}
                         onPress={() => claim(r)}
                       >
                         {claimingId === r.id ? "Mengambil…" : "Ambil Penanganan"}
                       </Button>
-                    ) : null}
-                  </div>
-                </CardBody>
+                    </Tooltip>
+                  ) : null}
+                </CardFooter>
               </Card>
             ))}
           </div>
           <PaginationBar page={page} total={total} pageSize={PAGE_SIZE} onChange={setPage} />
         </>
       )}
+      <ReportQuickView report={preview} isOpen={isOpen} onOpenChange={onOpenChange} onClose={onClose} detailHref="/fasilitas/laporan" />
     </div>
   );
 }

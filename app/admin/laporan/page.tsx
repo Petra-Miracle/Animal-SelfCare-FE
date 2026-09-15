@@ -2,11 +2,12 @@
 
 /* Daftar laporan lengkap (field penuh) + aksi SuperAdmin:
    verifikasi, tolak (+alasan), tawarkan ke 1+ fasilitas, tutup.
+   Filter cepat via Tabs, pelapor sebagai User, pratinjau via Drawer.
    Semua hasil akhir ditentukan backend — error 403/409 ditampilkan apa adanya. */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Eye, Funnel, Search, ShieldCheck } from "lucide-react";
+import { Eye, Search, ShieldCheck } from "lucide-react";
 import {
   Button,
   Checkbox,
@@ -16,15 +17,22 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
+  Radio,
+  RadioGroup,
+  ScrollShadow,
   Select,
   SelectItem,
+  Tab,
   Table,
   TableBody,
   TableCell,
   TableColumn,
   TableHeader,
   TableRow,
+  Tabs,
   Textarea,
+  Tooltip,
+  User as HeroUser,
   useDisclosure,
 } from "@heroui/react";
 import {
@@ -44,11 +52,22 @@ import { useToast } from "@/lib/toast";
 import PageHeader from "@/components/PageHeader";
 import PaginationBar from "@/components/PaginationBar";
 import StatusBadge from "@/components/StatusBadge";
-import { EmptyState, ErrorState, LoadingState } from "@/components/States";
-import { ALL_STATUSES, STATUS_META, formatDateID } from "@/lib/utils";
+import ReportQuickView from "@/components/ReportQuickView";
+import { EmptyState, ErrorState, TableSkeleton } from "@/components/States";
+import { formatDateID } from "@/lib/utils";
 import type { AdminReport, CareFacility, ReportStatus } from "@/lib/types";
 
 const PAGE_SIZE = 15;
+
+const QUICK_TABS: Array<{ key: string; label: string; status: ReportStatus | "" }> = [
+  { key: "SEMUA", label: "Semua", status: "" },
+  { key: "BARU", label: "Baru", status: "BARU" },
+  { key: "DIVERIFIKASI", label: "Diverifikasi", status: "DIVERIFIKASI" },
+  { key: "DITAWARKAN", label: "Ditawarkan", status: "DITAWARKAN" },
+  { key: "DIAMBIL", label: "Diambil", status: "DIAMBIL" },
+  { key: "DALAM_PENANGANAN", label: "Ditangani", status: "DALAM_PENANGANAN" },
+  { key: "SELESAI", label: "Selesai", status: "SELESAI" },
+];
 
 type Action = { kind: "reject" | "offer" | "close"; report: AdminReport } | null;
 
@@ -63,21 +82,32 @@ export default function AdminReportsPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const [searchInput, setSearchInput] = useState("");
+  const [tab, setTab] = useState("SEMUA");
   const [filters, setFilters] = useState<ReportListParams>({ sort: "newest" });
   const [facilities, setFacilities] = useState<CareFacility[]>([]);
+  const [preview, setPreview] = useState<AdminReport | null>(null);
 
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
+  const { isOpen: previewOpen, onOpen: onPreviewOpen, onOpenChange: onPreviewChange, onClose: onPreviewClose } = useDisclosure();
   const [action, setAction] = useState<Action>(null);
   const [reason, setReason] = useState("");
   const [closeTo, setCloseTo] = useState<"SELESAI" | "DIBATALKAN">("SELESAI");
   const [offerIds, setOfferIds] = useState<string[]>([]);
+
+  const activeStatus = useMemo(
+    () => QUICK_TABS.find((t) => t.key === tab)?.status ?? "",
+    [tab]
+  );
 
   const load = useCallback(
     async (silent = false) => {
       if (!silent) setLoading(true);
       setError(null);
       try {
-        const res = await listAdminReports({ ...filters, page, pageSize: PAGE_SIZE }, token ?? undefined);
+        const res = await listAdminReports(
+          { ...filters, status: (activeStatus || undefined) as ReportStatus | undefined, page, pageSize: PAGE_SIZE },
+          token ?? undefined
+        );
         setItems(res.items);
         setTotal(res.total);
       } catch (e) {
@@ -86,7 +116,7 @@ export default function AdminReportsPage() {
         setLoading(false);
       }
     },
-    [filters, page, token]
+    [filters, activeStatus, page, token]
   );
 
   useEffect(() => {
@@ -109,6 +139,11 @@ export default function AdminReportsPage() {
     setCloseTo("SELESAI");
     setOfferIds([]);
     onOpen();
+  };
+
+  const openPreview = (r: AdminReport) => {
+    setPreview(r);
+    onPreviewOpen();
   };
 
   const runVerify = async (r: AdminReport) => {
@@ -167,13 +202,29 @@ export default function AdminReportsPage() {
     <div>
       <PageHeader title="Kelola Laporan" description="Field lengkap termasuk kontak pelapor. Aksi final ditentukan backend." />
 
-      <div className="mb-4 flex flex-col gap-2.5 rounded-2xl border border-stone-200 bg-white p-3.5 shadow-sm sm:flex-row sm:flex-wrap">
+      <Tabs
+        selectedKey={tab}
+        onSelectionChange={(k) => {
+          setTab(String(k));
+          setPage(1);
+        }}
+        variant="solid"
+        color="success"
+        aria-label="Filter cepat status"
+        classNames={{ tabList: "bg-white shadow-card" }}
+      >
+        {QUICK_TABS.map((t) => (
+          <Tab key={t.key} title={t.label} />
+        ))}
+      </Tabs>
+
+      <div className="mb-4 mt-3 flex flex-col gap-2.5 rounded-3xl border border-stone-200/80 bg-white p-3.5 shadow-card sm:flex-row sm:flex-wrap">
         <Input
           placeholder="Cari lokasi / catatan…"
           value={searchInput}
           onValueChange={setSearchInput}
           aria-label="Pencarian"
-          startContent={<Search className="h-4 w-4 text-stone-400" aria-hidden />}
+          startContent={<Search className="h-4 w-4 shrink-0 text-stone-400" aria-hidden />}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               setPage(1);
@@ -182,24 +233,6 @@ export default function AdminReportsPage() {
           }}
           className="sm:max-w-56"
         />
-        <Select
-          placeholder="Semua status"
-          aria-label="Filter status"
-          className="sm:max-w-48"
-          selectedKeys={filters.status ? [filters.status] : []}
-          onSelectionChange={(k) => {
-            const v = Array.from(k)[0] as ReportStatus | undefined;
-            setPage(1);
-            setFilters((f) => ({ ...f, status: v ?? "" as never }));
-          }}
-          startContent={<Funnel className="h-3.5 w-3.5 text-stone-400" aria-hidden />}
-        >
-          {ALL_STATUSES.map((s) => (
-            <SelectItem key={s}>
-              {STATUS_META[s].label}
-            </SelectItem>
-          ))}
-        </Select>
         <Select
           aria-label="Urutan"
           className="sm:max-w-44"
@@ -218,6 +251,7 @@ export default function AdminReportsPage() {
         </Select>
         <Button
           color="success"
+          className="bg-brand-600 font-semibold"
           onPress={() => {
             setPage(1);
             setFilters((f) => ({ ...f, search: searchInput.trim() || undefined }));
@@ -228,14 +262,14 @@ export default function AdminReportsPage() {
       </div>
 
       {loading ? (
-        <LoadingState label="Memuat laporan…" />
+        <TableSkeleton rows={6} />
       ) : error ? (
         <ErrorState message={error} onRetry={() => load()} />
       ) : items.length === 0 ? (
         <EmptyState title="Tidak ada laporan" hint="Ubah filter atau tunggu laporan baru dari masyarakat." />
       ) : (
         <>
-          <div className="overflow-x-auto rounded-2xl border border-stone-200 bg-white shadow-sm">
+          <ScrollShadow orientation="horizontal" className="rounded-3xl border border-stone-200/80 bg-white shadow-card">
             <Table aria-label="Daftar laporan admin" removeWrapper>
               <TableHeader>
                 <TableColumn>LAPORAN</TableColumn>
@@ -247,7 +281,7 @@ export default function AdminReportsPage() {
                 {items.map((r) => (
                   <TableRow key={r.id}>
                     <TableCell className="min-w-56">
-                      <p className="max-w-64 truncate text-sm font-semibold text-stone-900">{r.locationText}</p>
+                      <p className="max-w-64 truncate text-sm font-bold text-stone-900">{r.locationText}</p>
                       <p className="text-xs text-stone-500">
                         {formatDateID(r.foundAt)} · {r.animalTypeGuess ?? "?"} · {r.animalCount} ekor
                         {r.isEmergency ? " · DARURAT" : ""}
@@ -256,15 +290,25 @@ export default function AdminReportsPage() {
                     <TableCell>
                       <StatusBadge status={r.status} showEmergency={false} />
                     </TableCell>
-                    <TableCell className="min-w-44">
-                      <p className="text-xs font-medium text-stone-800">{r.reporterName}</p>
-                      <p className="text-xs text-stone-500">{r.reporterPhone}</p>
+                    <TableCell className="min-w-48">
+                      <HeroUser
+                        name={r.reporterName}
+                        description={r.reporterPhone}
+                        avatarProps={{ name: r.reporterName.charAt(0).toUpperCase(), size: "sm", className: "bg-brand-600 text-white" }}
+                      />
                     </TableCell>
                     <TableCell>
-                      <div className="flex flex-wrap gap-1.5">
-                        <Button as={Link} href={`/admin/laporan/${r.id}`} size="sm" variant="light" isIconOnly aria-label="Lihat detail">
-                          <Eye className="h-4 w-4" aria-hidden />
-                        </Button>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <Tooltip content="Pratinjau cepat" placement="top" size="sm">
+                          <Button size="sm" variant="light" isIconOnly aria-label="Pratinjau cepat" onPress={() => openPreview(r)}>
+                            <Eye className="h-4 w-4" aria-hidden />
+                          </Button>
+                        </Tooltip>
+                        <Tooltip content="Buka detail lengkap" placement="top" size="sm">
+                          <Button as={Link} href={`/admin/laporan/${r.id}`} size="sm" variant="light" aria-label="Lihat detail">
+                            Detail
+                          </Button>
+                        </Tooltip>
                         {canVerify(r.status) ? (
                           <Button size="sm" color="success" variant="flat" isLoading={busyId === r.id} onPress={() => runVerify(r)}>
                             Verifikasi
@@ -291,10 +335,12 @@ export default function AdminReportsPage() {
                 ))}
               </TableBody>
             </Table>
-          </div>
+          </ScrollShadow>
           <PaginationBar page={page} total={total} pageSize={PAGE_SIZE} onChange={setPage} />
         </>
       )}
+
+      <ReportQuickView report={preview} isOpen={previewOpen} onOpenChange={onPreviewChange} onClose={onPreviewClose} detailHref="/admin/laporan" />
 
       <Modal isOpen={isOpen} onOpenChange={onOpenChange} placement="center">
         <ModalContent>
@@ -326,13 +372,15 @@ export default function AdminReportsPage() {
                   </div>
                 ) : null}
                 {action?.kind === "close" ? (
-                  <Select label="Status penutup" selectedKeys={[closeTo]} onSelectionChange={(k) => {
-                    const v = Array.from(k)[0] as typeof closeTo;
-                    if (v) setCloseTo(v);
-                  }}>
-                    <SelectItem key="SELESAI">SELESAI</SelectItem>
-                    <SelectItem key="DIBATALKAN">DIBATALKAN</SelectItem>
-                  </Select>
+                  <RadioGroup
+                    label="Status penutup"
+                    orientation="horizontal"
+                    value={closeTo}
+                    onValueChange={(v) => setCloseTo(v as typeof closeTo)}
+                  >
+                    <Radio value="SELESAI">SELESAI</Radio>
+                    <Radio value="DIBATALKAN">DIBATALKAN</Radio>
+                  </RadioGroup>
                 ) : null}
                 {action?.kind !== "offer" ? (
                   <Textarea
