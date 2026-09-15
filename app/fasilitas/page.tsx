@@ -7,7 +7,21 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Eye, HandHelping } from "lucide-react";
-import { Alert, Button, Card, CardBody, CardFooter, Chip, Tooltip, User as HeroUser, useDisclosure } from "@heroui/react";
+import {
+  Alert,
+  Button,
+  Chip,
+  ScrollShadow,
+  Table,
+  TableBody,
+  TableCell,
+  TableColumn,
+  TableHeader,
+  TableRow,
+  Tooltip,
+  User as HeroUser,
+  useDisclosure,
+} from "@heroui/react";
 import { ApiError } from "@/lib/types";
 import { apiErrorMessage, claimReport, listFacilityReports } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -75,7 +89,6 @@ export default function FacilityReportsPage() {
       load(true);
     } catch (e) {
       if (e instanceof ApiError && e.status === 409) {
-        // Kalah race dengan fasilitas lain — pesan jelas + refresh, bukan error generik.
         toast.error("Laporan ini baru saja diambil fasilitas lain.");
         load(true);
       } else if (e instanceof ApiError && e.status === 403) {
@@ -113,55 +126,74 @@ export default function FacilityReportsPage() {
         />
       ) : (
         <>
-          <div className="grid gap-3 md:grid-cols-2">
-            {items.map((r) => (
-              <Card key={r.id} className="border border-stone-200/70 shadow-card transition-shadow hover:shadow-lift">
-                <CardBody className="gap-2.5 p-4 sm:p-5">
-                  <StatusBadge status={r.status} showEmergency={r.isEmergency} />
-                  <p className="text-sm font-extrabold leading-snug text-stone-900">{r.locationText}</p>
-                  <p className="text-xs text-stone-500">
-                    {r.animalTypeGuess ?? "Jenis?"} · {r.animalCount} ekor · Ditemukan {formatDateID(r.foundAt)}
-                  </p>
-                  {r.conditionTags.length > 0 ? (
-                    <div className="flex flex-wrap gap-1">
-                      {r.conditionTags.slice(0, 4).map((t) => (
-                        <Chip key={t} size="sm" variant="flat">{t}</Chip>
-                      ))}
-                    </div>
-                  ) : null}
-                  <HeroUser
-                    name={r.reporterName}
-                    description={r.reporterPhone}
-                    avatarProps={{ name: r.reporterName.charAt(0).toUpperCase(), size: "sm", className: "bg-stone-200 text-stone-600" }}
-                  />
-                </CardBody>
-                <CardFooter className="gap-2 border-t border-stone-100 bg-stone-50/60 px-4 py-3">
-                  <Tooltip content="Lihat detail & kelola klaim" placement="top" size="sm">
-                    <Button as={Link} href={`/fasilitas/laporan/${r.id}`} size="sm" variant="bordered" startContent={<Eye className="h-3.5 w-3.5" aria-hidden />}>
-                      Detail
-                    </Button>
-                  </Tooltip>
-                  <Button size="sm" variant="light" onPress={() => { setPreview(r); onOpen(); }}>
-                    Pratinjau
-                  </Button>
-                  {r.status === "DITAWARKAN" ? (
-                    <Tooltip content="Hanya satu fasilitas yang bisa menang" placement="top" size="sm">
-                      <Button
-                        size="sm"
-                        color="success"
-                        className="ml-auto bg-brand-600 font-bold"
-                        startContent={<HandHelping className="h-4 w-4" aria-hidden />}
-                        isLoading={claimingId === r.id}
-                        onPress={() => claim(r)}
-                      >
-                        {claimingId === r.id ? "Mengambil…" : "Ambil Penanganan"}
-                      </Button>
-                    </Tooltip>
-                  ) : null}
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
+          <ScrollShadow orientation="horizontal" className="rounded-3xl border border-stone-200/80 bg-white shadow-card">
+            <Table aria-label="Daftar laporan fasilitas" removeWrapper>
+              <TableHeader>
+                <TableColumn>LAPORAN</TableColumn>
+                <TableColumn>STATUS</TableColumn>
+                <TableColumn>PELAPOR</TableColumn>
+                <TableColumn>AKSI</TableColumn>
+              </TableHeader>
+              <TableBody>
+                {items.map((r) => (
+                  <TableRow key={r.id}>
+                    <TableCell className="min-w-56">
+                      <p className="max-w-64 truncate text-sm font-bold text-stone-900">{r.locationText}</p>
+                      <p className="text-xs text-stone-500">
+                        {formatDateID(r.foundAt)} · {r.animalTypeGuess ?? "?"} · {r.animalCount} ekor
+                        {r.isEmergency ? " · DARURAT" : ""}
+                      </p>
+                      {r.conditionTags.length > 0 ? (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {r.conditionTags.slice(0, 3).map((t) => (
+                            <Chip key={t} size="sm" variant="flat">{t}</Chip>
+                          ))}
+                        </div>
+                      ) : null}
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge status={r.status} showEmergency={r.isEmergency} />
+                    </TableCell>
+                    <TableCell className="min-w-48">
+                      <HeroUser
+                        name={r.reporterName}
+                        description={r.reporterPhone}
+                        avatarProps={{ name: r.reporterName.charAt(0).toUpperCase(), size: "sm", className: "bg-brand-600 text-white" }}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <Tooltip content="Pratinjau cepat" placement="top" size="sm">
+                          <Button size="sm" variant="light" isIconOnly aria-label="Pratinjau cepat" onPress={() => { setPreview(r); onOpen(); }}>
+                            <Eye className="h-4 w-4" aria-hidden />
+                          </Button>
+                        </Tooltip>
+                        <Tooltip content="Detail & klaim" placement="top" size="sm">
+                          <Button as={Link} href={`/fasilitas/laporan/${r.id}`} size="sm" variant="light">
+                            Detail
+                          </Button>
+                        </Tooltip>
+                        {r.status === "DITAWARKAN" ? (
+                          <Tooltip content="Hanya satu fasilitas yang bisa menang" placement="top" size="sm">
+                            <Button
+                              size="sm"
+                              color="success"
+                              className="bg-brand-600 font-bold"
+                              startContent={<HandHelping className="h-4 w-4" aria-hidden />}
+                              isLoading={claimingId === r.id}
+                              onPress={() => claim(r)}
+                            >
+                              {claimingId === r.id ? "Mengambil…" : "Ambil"}
+                            </Button>
+                          </Tooltip>
+                        ) : null}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </ScrollShadow>
           <PaginationBar page={page} total={total} pageSize={PAGE_SIZE} onChange={setPage} />
         </>
       )}

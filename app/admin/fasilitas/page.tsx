@@ -8,8 +8,6 @@ import {
   Alert,
   Avatar,
   Button,
-  Card,
-  CardBody,
   Chip,
   Input,
   Modal,
@@ -17,10 +15,17 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
+  ScrollShadow,
   Select,
   SelectItem,
   Skeleton,
   Switch,
+  Table,
+  TableBody,
+  TableCell,
+  TableColumn,
+  TableHeader,
+  TableRow,
   Textarea,
   Tooltip,
   User as HeroUser,
@@ -177,10 +182,10 @@ export default function AdminFacilitiesPage() {
       />
 
       {loading ? (
-        <div className="grid gap-3 md:grid-cols-2" aria-hidden>
+        <div className="space-y-3" aria-hidden>
           {[0, 1, 2, 3].map((i) => (
             <Skeleton key={i} className="rounded-3xl">
-              <div className="h-36" />
+              <div className="h-20" />
             </Skeleton>
           ))}
         </div>
@@ -189,75 +194,86 @@ export default function AdminFacilitiesPage() {
       ) : items.length === 0 ? (
         <EmptyState title="Belum ada fasilitas" hint="Tambahkan rumah sakit atau organisasi mitra pertama." />
       ) : (
-        <div className="grid gap-3 md:grid-cols-2">
-          {items.map((f) => (
-            <Card key={f.id} className="border border-stone-200/70 shadow-card transition-shadow hover:shadow-lift">
-              <CardBody className="gap-3 p-4 sm:p-5">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-3">
-                    <Avatar
-                      name={f.name.charAt(0).toUpperCase()}
-                      className={f.isVerified ? "bg-brand-600 text-white" : "bg-stone-200 text-stone-600"}
-                      size="md"
-                    />
-                    <div>
-                      <p className="flex items-center gap-1.5 text-sm font-extrabold text-stone-900">
-                        {f.name}
-                        {f.isVerified ? <BadgeCheck className="h-4 w-4 shrink-0 text-brand-600" aria-label="Terverifikasi" /> : null}
-                      </p>
-                      <p className="text-xs text-stone-500">
-                        {f.type === "HOSPITAL" ? "Rumah Sakit" : "Organisasi"} · {f.regionCity}
-                        {f.address ? ` · ${f.address}` : ""}
-                      </p>
+        <ScrollShadow orientation="horizontal" className="rounded-3xl border border-stone-200/80 bg-white shadow-card">
+          <Table aria-label="Daftar fasilitas" removeWrapper>
+            <TableHeader>
+              <TableColumn>FASILITAS</TableColumn>
+              <TableColumn>KONTAK</TableColumn>
+              <TableColumn>STATUS</TableColumn>
+              <TableColumn>AKSI</TableColumn>
+            </TableHeader>
+            <TableBody>
+              {items.map((f) => (
+                <TableRow key={f.id}>
+                  <TableCell className="min-w-56">
+                    <div className="flex items-center gap-3">
+                      <Avatar
+                        name={f.name.charAt(0).toUpperCase()}
+                        className={f.isVerified ? "bg-brand-600 text-white" : "bg-stone-200 text-stone-600"}
+                        size="sm"
+                      />
+                      <div>
+                        <p className="flex items-center gap-1.5 text-sm font-extrabold text-stone-900">
+                          {f.name}
+                          {f.isVerified ? <BadgeCheck className="h-4 w-4 shrink-0 text-brand-600" aria-label="Terverifikasi" /> : null}
+                        </p>
+                        <p className="text-xs text-stone-500">
+                          {f.type === "HOSPITAL" ? "Rumah Sakit" : "Organisasi"} · {f.regionCity}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  <Chip size="sm" color={f.isVerified ? "success" : "default"} variant="flat">
-                    {f.isVerified ? "Terverifikasi" : "Belum verif"}
-                  </Chip>
-                </div>
-                <HeroUser
-                  name={f.email}
-                  description={f.phone}
-                  avatarProps={{ icon: <Building className="h-4 w-4" aria-hidden />, className: "bg-stone-100 text-stone-500" }}
-                />
-                <div className="flex flex-wrap items-center gap-2 border-t border-stone-100 pt-3">
-                  <Tooltip content={f.isVerified ? "Cabut verifikasi" : "Verifikasi fasilitas"} placement="top" size="sm">
-                    <Switch
-                      size="sm"
-                      color="success"
-                      isSelected={f.isVerified}
-                      onValueChange={() => toggleVerified(f)}
-                      aria-label={`Verifikasi ${f.name}`}
-                    >
-                      <span className="text-xs font-medium">Verifikasi</span>
-                    </Switch>
-                  </Tooltip>
-                  <span className="flex-1" />
-                  <Tooltip content="Ubah data fasilitas" placement="top" size="sm">
-                    <Button size="sm" variant="light" isIconOnly aria-label={`Ubah ${f.name}`} onPress={() => openEdit(f)}>
-                      <Pencil className="h-4 w-4" aria-hidden />
-                    </Button>
-                  </Tooltip>
-                  <Tooltip content="Hapus fasilitas" placement="top" size="sm">
-                    <Button
-                      size="sm"
-                      variant="light"
-                      color="danger"
-                      isIconOnly
-                      aria-label={`Hapus ${f.name}`}
-                      onPress={() => {
-                        setDeleting(f);
-                        onDelOpen();
-                      }}
-                    >
-                      <Trash className="h-4 w-4" aria-hidden />
-                    </Button>
-                  </Tooltip>
-                </div>
-              </CardBody>
-            </Card>
-          ))}
-        </div>
+                  </TableCell>
+                  <TableCell className="min-w-48">
+                    <HeroUser
+                      name={f.email}
+                      description={f.phone}
+                      avatarProps={{ icon: <Building className="h-4 w-4" aria-hidden />, className: "bg-stone-100 text-stone-500", size: "sm" }}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Tooltip content={f.isVerified ? "Cabut verifikasi" : "Verifikasi fasilitas"} placement="top" size="sm">
+                      <Switch
+                        size="sm"
+                        color="success"
+                        isSelected={f.isVerified}
+                        onValueChange={() => toggleVerified(f)}
+                        aria-label={`Verifikasi ${f.name}`}
+                      >
+                        <Chip size="sm" color={f.isVerified ? "success" : "default"} variant="flat">
+                          {f.isVerified ? "Terverifikasi" : "Belum verif"}
+                        </Chip>
+                      </Switch>
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1">
+                      <Tooltip content="Ubah data fasilitas" placement="top" size="sm">
+                        <Button size="sm" variant="light" isIconOnly aria-label={`Ubah ${f.name}`} onPress={() => openEdit(f)}>
+                          <Pencil className="h-4 w-4" aria-hidden />
+                        </Button>
+                      </Tooltip>
+                      <Tooltip content="Hapus fasilitas" placement="top" size="sm">
+                        <Button
+                          size="sm"
+                          variant="light"
+                          color="danger"
+                          isIconOnly
+                          aria-label={`Hapus ${f.name}`}
+                          onPress={() => {
+                            setDeleting(f);
+                            onDelOpen();
+                          }}
+                        >
+                          <Trash className="h-4 w-4" aria-hidden />
+                        </Button>
+                      </Tooltip>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </ScrollShadow>
       )}
 
       <Modal isOpen={isOpen} onOpenChange={onOpenChange} placement="center" scrollBehavior="inside">

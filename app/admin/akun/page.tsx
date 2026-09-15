@@ -6,8 +6,6 @@ import { useCallback, useEffect, useState } from "react";
 import { KeyRound, Mail, Plus, UserX } from "lucide-react";
 import {
   Button,
-  Card,
-  CardBody,
   Chip,
   Input,
   Modal,
@@ -15,9 +13,16 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
+  ScrollShadow,
   Select,
   SelectItem,
   Skeleton,
+  Table,
+  TableBody,
+  TableCell,
+  TableColumn,
+  TableHeader,
+  TableRow,
   Tooltip,
   User as HeroUser,
   useDisclosure,
@@ -131,10 +136,10 @@ export default function AdminUsersPage() {
       />
 
       {loading ? (
-        <div className="grid gap-3 md:grid-cols-2" aria-hidden>
+        <div className="space-y-3" aria-hidden>
           {[0, 1, 2, 3].map((i) => (
             <Skeleton key={i} className="rounded-3xl">
-              <div className="h-28" />
+              <div className="h-20" />
             </Skeleton>
           ))}
         </div>
@@ -143,37 +148,55 @@ export default function AdminUsersPage() {
       ) : items.length === 0 ? (
         <EmptyState title="Belum ada akun" />
       ) : (
-        <div className="grid gap-3 md:grid-cols-2">
-          {items.map((u) => (
-            <Card key={u.id} className={`border shadow-card ${u.isActive ? "border-stone-200/70" : "border-stone-200 opacity-70"}`}>
-              <CardBody className="gap-2.5 p-4 sm:p-5">
-                <div className="flex items-start justify-between gap-2">
-                  <HeroUser
-                    name={u.email}
-                    description={u.role === "SUPERADMIN" ? "SuperAdmin" : `Admin RS · ${u.facilityId ? (facilityName[u.facilityId] ?? "Fasilitas") : "-"}`}
-                    avatarProps={{
-                      name: u.email.charAt(0).toUpperCase(),
-                      className: u.role === "SUPERADMIN" ? "bg-violet-600 text-white" : "bg-brand-600 text-white",
-                    }}
-                  />
-                  <Chip size="sm" color={u.isActive ? "success" : "default"} variant="flat">
-                    {u.isActive ? "Aktif" : "Nonaktif"}
-                  </Chip>
-                </div>
-                <p className="text-xs text-stone-400">Dibuat {formatDateID(u.createdAt)}{u.phone ? ` · ${u.phone}` : ""}</p>
-                {u.isActive && u.id !== user?.id ? (
-                  <div className="border-t border-stone-100 pt-2">
-                    <Tooltip content="Cabut akses masuk akun ini" placement="top" size="sm">
-                      <Button size="sm" variant="light" color="danger" startContent={<UserX className="h-3.5 w-3.5" aria-hidden />} onPress={() => deactivate(u)}>
-                        Nonaktifkan
-                      </Button>
-                    </Tooltip>
-                  </div>
-                ) : null}
-              </CardBody>
-            </Card>
-          ))}
-        </div>
+        <ScrollShadow orientation="horizontal" className="rounded-3xl border border-stone-200/80 bg-white shadow-card">
+          <Table aria-label="Daftar akun" removeWrapper>
+            <TableHeader>
+              <TableColumn>AKUN</TableColumn>
+              <TableColumn>ROLE</TableColumn>
+              <TableColumn>STATUS</TableColumn>
+              <TableColumn>AKSI</TableColumn>
+            </TableHeader>
+            <TableBody>
+              {items.map((u) => (
+                <TableRow key={u.id} className={u.isActive ? "" : "opacity-60"}>
+                  <TableCell className="min-w-56">
+                    <HeroUser
+                      name={u.email}
+                      description={[u.phone, formatDateID(u.createdAt)].filter(Boolean).join(" · ")}
+                      avatarProps={{
+                        name: u.email.charAt(0).toUpperCase(),
+                        className: u.role === "SUPERADMIN" ? "bg-violet-600 text-white" : "bg-brand-600 text-white",
+                        size: "sm",
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm text-stone-700">
+                      {u.role === "SUPERADMIN" ? "SuperAdmin" : `Admin RS`}
+                    </span>
+                    {u.role === "ADMIN_RS" && u.facilityId ? (
+                      <p className="max-w-48 truncate text-xs text-stone-400">{facilityName[u.facilityId] ?? "Fasilitas"}</p>
+                    ) : null}
+                  </TableCell>
+                  <TableCell>
+                    <Chip size="sm" color={u.isActive ? "success" : "default"} variant="flat">
+                      {u.isActive ? "Aktif" : "Nonaktif"}
+                    </Chip>
+                  </TableCell>
+                  <TableCell>
+                    {u.isActive && u.id !== user?.id ? (
+                      <Tooltip content="Cabut akses masuk akun ini" placement="top" size="sm">
+                        <Button size="sm" variant="light" color="danger" startContent={<UserX className="h-3.5 w-3.5" aria-hidden />} onPress={() => deactivate(u)}>
+                          Nonaktifkan
+                        </Button>
+                      </Tooltip>
+                    ) : null}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </ScrollShadow>
       )}
 
       <Modal isOpen={isOpen} onOpenChange={onOpenChange} placement="center">
