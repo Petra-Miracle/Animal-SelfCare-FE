@@ -12,7 +12,48 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Plus Jakarta Sans", "ui-sans-serif", "system-ui", "sans-serif"],
+        sans: ["var(--font-inter)", "Plus Jakarta Sans", "ui-sans-serif", "system-ui", "sans-serif"],
+        heading: ["var(--font-jakarta)", "Plus Jakarta Sans", "ui-sans-serif", "system-ui", "sans-serif"],
+      },
+      colors: {
+        page: "#F7FAF9",
+        surface: "#FFFFFF",
+        subtle: "#F0F5F4",
+        border: "#DFE7E5",
+        primary: {
+          DEFAULT: "#0F766E",
+          hover: "#0B5C56",
+          light: "#E4F3F1",
+        },
+        accent: "#14B8A6",
+        emergency: {
+          DEFAULT: "#DC2626",
+          bg: "#FEECEC",
+        },
+        warning: {
+          DEFAULT: "#B45309",
+          bg: "#FEF3C7",
+        },
+        success: {
+          DEFAULT: "#15803D",
+          bg: "#DCFCE7",
+        },
+        info: {
+          DEFAULT: "#1D4ED8",
+          bg: "#DBEAFE",
+        },
+        txt: {
+          primary: "#12211F",
+          secondary: "#57706B",
+          muted: "#93A6A2",
+        },
+      },
+      borderRadius: {
+        sm: "8px",
+        md: "12px",
+        lg: "16px",
+        xl: "24px",
+        pill: "999px",
       },
       boxShadow: {
         card: "0 1px 2px rgb(28 25 23 / 0.05), 0 8px 24px -12px rgb(5 150 105 / 0.25)",
@@ -21,15 +62,13 @@ const config: Config = {
     },
   },
   darkMode: "class",
-  // Cast: duplikat tipe tailwindcss di node_modules membuat checker bawel,
-  // plugin tetap valid untuk Tailwind v3 saat runtime.
   plugins: [
     heroui({
       layout: {
         radius: {
-          small: "0.5rem",
-          medium: "0.75rem",
-          large: "1.25rem",
+          small: "8px",
+          medium: "12px",
+          large: "16px",
         },
         borderWidth: {
           small: "1px",
@@ -40,20 +79,18 @@ const config: Config = {
       themes: {
         light: {
           colors: {
-            // `as never`: ThemeColors bawaan tidak mengenal kunci custom,
-            // tapi plugin runtime mendukung warna tambahan seperti ini.
             brand: {
-              50: "#ecfdf3",
-              100: "#d1fae0",
-              200: "#a6f4c5",
-              300: "#6ce9a6",
-              400: "#32d583",
-              500: "#12b76a",
-              600: "#039855",
-              700: "#027a48",
-              800: "#05603a",
-              900: "#054f31",
-              DEFAULT: "#039855",
+              50: "#E4F3F1",
+              100: "#C8E8E3",
+              200: "#91D1C8",
+              300: "#5ABAAD",
+              400: "#2EA397",
+              500: "#0F766E",
+              600: "#0B5C56",
+              700: "#084A44",
+              800: "#053832",
+              900: "#032620",
+              DEFAULT: "#0F766E",
               foreground: "#ffffff",
             },
           } as never,

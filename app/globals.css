@@ -2,17 +2,46 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  :root {
+    --color-bg-page: #F7FAF9;
+    --color-bg-surface: #FFFFFF;
+    --color-bg-subtle: #F0F5F4;
+    --color-border: #DFE7E5;
+    --color-text-primary: #12211F;
+    --color-text-secondary: #57706B;
+    --color-text-muted: #93A6A2;
+    --color-primary: #0F766E;
+    --color-primary-hover: #0B5C56;
+    --color-primary-light: #E4F3F1;
+    --color-accent: #14B8A6;
+    --color-emergency: #DC2626;
+    --color-emergency-bg: #FEECEC;
+    --color-warning: #B45309;
+    --color-warning-bg: #FEF3C7;
+    --color-success: #15803D;
+    --color-success-bg: #DCFCE7;
+    --color-info: #1D4ED8;
+    --color-info-bg: #DBEAFE;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+    --radius-pill: 999px;
+  }
+}
+
 html {
   scroll-behavior: smooth;
 }
 
 body {
-  @apply bg-stone-50 font-sans text-stone-900 antialiased;
+  @apply bg-page font-sans text-txt-primary antialiased;
   text-rendering: optimizeLegibility;
 }
 
 ::selection {
-  @apply bg-brand-200 text-brand-900;
+  @apply bg-primary-light text-primary;
 }
 
 /* Scrollbar ramping */
@@ -25,7 +54,7 @@ body {
   height: 8px;
 }
 *::-webkit-scrollbar-thumb {
-  @apply rounded-full bg-stone-300;
+  @apply rounded-full bg-border;
 }
 *::-webkit-scrollbar-track {
   background: transparent;
@@ -35,20 +64,25 @@ body {
   .text-balance {
     text-wrap: balance;
   }
-  /* Latar mesh gradient untuk hero */
+
+  /* Mesh gradient untuk hero */
   .bg-hero-mesh {
     background:
-      radial-gradient(42rem 22rem at 85% -10%, rgb(18 183 106 / 0.22), transparent 60%),
-      radial-gradient(36rem 20rem at -10% 20%, rgb(56 189 248 / 0.18), transparent 60%),
+      radial-gradient(42rem 22rem at 85% -10%, rgb(15 118 110 / 0.22), transparent 60%),
+      radial-gradient(36rem 20rem at -10% 20%, rgb(20 184 166 / 0.18), transparent 60%),
       radial-gradient(30rem 18rem at 50% 110%, rgb(251 191 36 / 0.14), transparent 60%),
-      linear-gradient(180deg, #ecfdf3 0%, #f5f5f4 100%);
+      linear-gradient(180deg, #E4F3F1 0%, #F7FAF9 100%);
   }
+
+  /* Dark mesh untuk sidebar & hero gelap */
   .bg-dark-mesh {
     background:
-      radial-gradient(40rem 20rem at 90% 0%, rgb(18 183 106 / 0.35), transparent 60%),
-      radial-gradient(34rem 22rem at 0% 100%, rgb(14 165 183 / 0.3), transparent 60%),
-      linear-gradient(135deg, #052e22 0%, #022c22 55%, #082f2e 100%);
+      radial-gradient(40rem 20rem at 90% 0%, rgb(15 118 110 / 0.35), transparent 60%),
+      radial-gradient(34rem 22rem at 0% 100%, rgb(20 184 166 / 0.3), transparent 60%),
+      linear-gradient(135deg, #0E2422 0%, #0B1D1B 55%, #0E2422 100%);
   }
+
+  /* Dot pattern untuk kartu */
   .bg-card-dots {
     background-image: radial-gradient(rgb(255 255 255 / 0.22) 1px, transparent 1px);
     background-size: 14px 14px;

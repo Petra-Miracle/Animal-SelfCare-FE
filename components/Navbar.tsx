@@ -1,11 +1,5 @@
 "use client";
 
-/* Navigasi utama situs — dibangun dengan Pro-style Navbar
-   (components/pro-navbar.tsx, API setara HeroUI Pro):
-   routing client-side Next.js via prop `navigate` (dokumen Pro: Option 2),
-   `hideOnScroll`, dan mobile menu bawaan (MenuToggle + Menu + MenuItem).
-   Tautan dashboard hanya tampil sesuai role yang sedang login. */
-
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { PawPrint } from "lucide-react";
@@ -47,17 +41,16 @@ export default function SiteNavbar() {
         <Navbar.MenuToggle className="md:hidden" srLabel="Buka/tutup menu navigasi" />
 
         <Navbar.Brand>
-          <Link href="/" className="flex items-center gap-2 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-emerald-500" aria-label="Animal SelfCare — Beranda">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600 text-white" aria-hidden>
+          <Link href="/" className="flex items-center gap-2 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label="Animal SelfCare — Beranda">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white" aria-hidden>
               <PawPrint className="h-5 w-5" />
             </span>
-            <span className="text-sm font-bold leading-tight text-stone-900 sm:text-base">
-              Animal <span className="text-emerald-700">SelfCare</span>
+            <span className="text-sm font-bold leading-tight text-txt-primary font-heading sm:text-base">
+              Animal <span className="text-primary">SelfCare</span>
             </span>
           </Link>
         </Navbar.Brand>
 
-        {/* Navigasi desktop */}
         <Navbar.Content className="hidden md:flex">
           {PUBLIC_LINKS.map((l) => (
             <Navbar.Item key={l.href} href={l.href} isCurrent={isActive(l.href)}>
@@ -74,25 +67,22 @@ export default function SiteNavbar() {
         <Navbar.Spacer />
 
         <Navbar.Content>
-          <Button as={Link} href="/lapor" color="success" size="sm" className="font-semibold">
-            Laporkan Hewan
-          </Button>
           <NotificationBell />
           {loading ? null : user ? (
             <Dropdown placement="bottom-end">
               <DropdownTrigger>
-                <button aria-label="Menu akun" className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-emerald-500">
+                <button aria-label="Menu akun" className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primary">
                   <Avatar
                     size="sm"
                     name={user.email.charAt(0).toUpperCase()}
-                    className="bg-emerald-700 text-white"
+                    className="bg-primary text-white"
                   />
                 </button>
               </DropdownTrigger>
               <DropdownMenu aria-label="Menu akun" disabledKeys={["info"]}>
                 <DropdownItem key="info" isReadOnly textValue={user.email} className="opacity-100">
-                  <span className="block max-w-52 truncate text-sm font-semibold text-stone-900">{user.email}</span>
-                  <span className="block text-xs text-stone-500">
+                  <span className="block max-w-52 truncate text-sm font-semibold text-txt-primary">{user.email}</span>
+                  <span className="block text-xs text-txt-secondary">
                     {user.role === "SUPERADMIN" ? "SuperAdmin" : "Admin Fasilitas"}
                   </span>
                 </DropdownItem>
@@ -107,13 +97,12 @@ export default function SiteNavbar() {
               </DropdownMenu>
             </Dropdown>
           ) : (
-            <Button as={Link} href="/login" variant="flat" size="sm">
+            <Button as={Link} href="/login" variant="flat" size="sm" className="text-primary">
               Masuk
             </Button>
           )}
         </Navbar.Content>
 
-        {/* Menu mobile bawaan Pro Navbar (otomatis menutup setelah dipilih). */}
         <Navbar.Menu>
           {PUBLIC_LINKS.map((l) => (
             <Navbar.MenuItem key={l.href} href={l.href} isCurrent={isActive(l.href)}>

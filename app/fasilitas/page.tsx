@@ -1,38 +1,18 @@
 "use client";
 
-/* Daftar laporan yang ditawarkan / ditangani fasilitas ini + tombol klaim.
-   Anti-bentrok: 409 -> "baru saja diambil fasilitas lain" + refresh,
-   403 -> tidak ditawarkan, tombol tidak stuck loading. */
-
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Eye, HandHelping } from "lucide-react";
-import {
-  Alert,
-  Button,
-  Chip,
-  ScrollShadow,
-  Table,
-  TableBody,
-  TableCell,
-  TableColumn,
-  TableHeader,
-  TableRow,
-  Tooltip,
-  User as HeroUser,
-  useDisclosure,
-} from "@heroui/react";
+import { AlertCircle, CheckCircle, Clock, HandHelping, LoaderCircle, MapPin, PawPrint } from "lucide-react";
+import { Button } from "@heroui/react";
 import { ApiError } from "@/lib/types";
-import { apiErrorMessage, claimReport, listFacilityReports } from "@/lib/api";
+import { apiErrorMessage, claimReport, listFacilityReports, reportImageUrl } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { eventReportId, useRealtime } from "@/lib/sse";
 import { useToast } from "@/lib/toast";
-import PageHeader from "@/components/PageHeader";
 import PaginationBar from "@/components/PaginationBar";
 import StatusBadge from "@/components/StatusBadge";
-import ReportQuickView from "@/components/ReportQuickView";
-import { EmptyState, ErrorState, TableSkeleton } from "@/components/States";
-import { formatDateID } from "@/lib/utils";
+import { EmptyState, ErrorState, CardSkeletonGrid } from "@/components/States";
+import { formatDateID, timeAgoID } from "@/lib/utils";
 import type { AdminReport } from "@/lib/types";
 
 const PAGE_SIZE = 12;
@@ -46,8 +26,6 @@ export default function FacilityReportsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [claimingId, setClaimingId] = useState<string | null>(null);
-  const [preview, setPreview] = useState<AdminReport | null>(null);
-  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
 
   const load = useCallback(
     async (silent = false) => {
@@ -103,20 +81,15 @@ export default function FacilityReportsPage() {
   };
 
   return (
-    <div>
-      <PageHeader
-        title="Laporan Masuk"
-        description="Laporan yang ditawarkan ke fasilitas Anda & yang sedang Anda tangani."
-      />
-      <Alert
-        color="primary"
-        variant="faded"
-        title="Klaim bersifat rebutan"
-        description="Hanya satu fasilitas yang menang per laporan. Klaim yang menang wajib dikonfirmasi (Mulai Penanganan) dalam 20 menit."
-        className="mb-4"
-      />
+    <div className="space-y-4">
+      <div>
+        <p className="text-sm text-txt-secondary">
+          Laporan berikut ditawarkan ke RS Hewan Kupang. Ambil penanganan sebelum diambil fasilitas lain.
+        </p>
+      </div>
+
       {loading ? (
-        <TableSkeleton rows={4} />
+        <CardSkeletonGrid count={6} />
       ) : error ? (
         <ErrorState message={error} onRetry={() => load()} />
       ) : items.length === 0 ? (
@@ -126,78 +99,83 @@ export default function FacilityReportsPage() {
         />
       ) : (
         <>
-          <ScrollShadow orientation="horizontal" className="rounded-3xl border border-stone-200/80 bg-white shadow-card">
-            <Table aria-label="Daftar laporan fasilitas" removeWrapper>
-              <TableHeader>
-                <TableColumn>LAPORAN</TableColumn>
-                <TableColumn>STATUS</TableColumn>
-                <TableColumn>PELAPOR</TableColumn>
-                <TableColumn>AKSI</TableColumn>
-              </TableHeader>
-              <TableBody>
-                {items.map((r) => (
-                  <TableRow key={r.id}>
-                    <TableCell className="min-w-56">
-                      <p className="max-w-64 truncate text-sm font-bold text-stone-900">{r.locationText}</p>
-                      <p className="text-xs text-stone-500">
-                        {formatDateID(r.foundAt)} · {r.animalTypeGuess || "?"} · {r.animalCount} ekor
-                        {r.isEmergency ? " · DARURAT" : ""}
-                      </p>
-                      {r.conditionTags.length > 0 ? (
-                        <div className="mt-1 flex flex-wrap gap-1">
-                          {r.conditionTags.slice(0, 3).map((t) => (
-                            <Chip key={t} size="sm" variant="flat">{t}</Chip>
-                          ))}
-                        </div>
-                      ) : null}
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={r.status} showEmergency={r.isEmergency} />
-                    </TableCell>
-                    <TableCell className="min-w-48">
-                      <HeroUser
-                        name={r.reporterName}
-                        description={r.reporterPhone || r.reporterEmail || "-"}
-                        avatarProps={{ name: r.reporterName.charAt(0).toUpperCase(), size: "sm", className: "bg-brand-600 text-white" }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <Tooltip content="Pratinjau cepat" placement="top" size="sm">
-                          <Button size="sm" variant="light" isIconOnly aria-label="Pratinjau cepat" onPress={() => { setPreview(r); onOpen(); }}>
-                            <Eye className="h-4 w-4" aria-hidden />
-                          </Button>
-                        </Tooltip>
-                        <Tooltip content="Detail & klaim" placement="top" size="sm">
-                          <Button as={Link} href={`/fasilitas/laporan/${r.id}`} size="sm" variant="light">
-                            Detail
-                          </Button>
-                        </Tooltip>
-                        {r.status === "DITAWARKAN" ? (
-                          <Tooltip content="Hanya satu fasilitas yang bisa menang" placement="top" size="sm">
-                            <Button
-                              size="sm"
-                              color="success"
-                              className="bg-brand-600 font-bold"
-                              startContent={<HandHelping className="h-4 w-4" aria-hidden />}
-                              isLoading={claimingId === r.id}
-                              onPress={() => claim(r)}
-                            >
-                              {claimingId === r.id ? "Mengambil…" : "Ambil"}
-                            </Button>
-                          </Tooltip>
-                        ) : null}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </ScrollShadow>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {items.map((r) => (
+              <div key={r.id} className="overflow-hidden rounded-xl border border-border bg-surface shadow-card">
+                {/* Image area */}
+                <div className="relative flex h-40 items-center justify-center overflow-hidden bg-subtle">
+                  {r.images.length > 0 ? (
+                    <img
+                      src={reportImageUrl(r.id, r.images[0].id)}
+                      alt={r.animalTypeGuess ?? "Hewan"}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <PawPrint className="h-12 w-12 text-txt-muted/40" aria-hidden />
+                  )}
+                  {r.isEmergency && (
+                    <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-emergency px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white">
+                      <span aria-hidden>⚠</span> Darurat
+                    </span>
+                  )}
+                </div>
+
+                {/* Content */}
+                <div className="p-4">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <p className="font-bold text-txt-primary font-heading">
+                      {r.animalTypeGuess ?? "Hewan"}
+                    </p>
+                    <StatusBadge status={r.status} showEmergency={false} />
+                  </div>
+
+                  <div className="space-y-1 mb-4">
+                    <p className="flex items-start gap-1.5 text-sm text-txt-secondary">
+                      <MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                      <span className="line-clamp-1">{r.locationText}</span>
+                    </p>
+                    <p className="flex items-center gap-1.5 text-xs text-txt-muted">
+                      <Clock className="h-3.5 w-3.5" aria-hidden />
+                      {timeAgoID(r.createdAt)}
+                    </p>
+                  </div>
+
+                  {/* Claim button */}
+                  {r.status === "DITAWARKAN" && (
+                    <Button
+                      className="w-full bg-primary font-bold text-white"
+                      startContent={<HandHelping className="h-4 w-4" aria-hidden />}
+                      isLoading={claimingId === r.id}
+                      spinner={<LoaderCircle className="h-4 w-4 animate-spin" aria-hidden />}
+                      onPress={() => claim(r)}
+                    >
+                      {claimingId === r.id ? "Mengambil…" : "Ambil Penanganan"}
+                    </Button>
+                  )}
+                  {r.status === "DIAMBIL" && (
+                    <div className="flex items-center justify-center gap-2 rounded-xl bg-subtle px-4 py-3 text-sm font-medium text-txt-secondary">
+                      <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden />
+                      Memproses...
+                    </div>
+                  )}
+                  {r.status === "DALAM_PENANGANAN" && (
+                    <div className="flex items-center justify-center gap-2 rounded-xl bg-emergency-bg px-4 py-3 text-sm font-medium text-emergency">
+                      <AlertCircle className="h-4 w-4" aria-hidden />
+                      Laporan ini baru saja diambil fasilitas lain.
+                    </div>
+                  )}
+                  {!["DITAWARKAN", "DIAMBIL", "DALAM_PENANGANAN"].includes(r.status) && (
+                    <div className="flex items-center justify-center gap-2 rounded-xl bg-subtle px-4 py-3 text-sm font-medium text-txt-muted">
+                      Sudah Diambil
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
           <PaginationBar page={page} total={total} pageSize={PAGE_SIZE} onChange={setPage} />
         </>
       )}
-      <ReportQuickView report={preview} isOpen={isOpen} onOpenChange={onOpenChange} onClose={onClose} detailHref="/fasilitas/laporan" />
     </div>
   );
 }

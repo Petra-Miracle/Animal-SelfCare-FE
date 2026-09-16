@@ -25,6 +25,11 @@ import {
 export const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000/api/v1";
 
+/** Construct the URL for a report image. */
+export function reportImageUrl(reportId: string, imageId: string): string {
+  return `${API_BASE}/reports/${reportId}/images/${imageId}`;
+}
+
 export const TOKEN_COOKIE = "asc_token";
 
 export function getToken(): string | undefined {

@@ -2,7 +2,6 @@
 
 import { Pagination } from "@heroui/react";
 
-/* Pagination tunggal berbasis HeroUI — dipakai semua daftar. */
 export default function PaginationBar({
   page,
   total,
@@ -18,8 +17,19 @@ export default function PaginationBar({
   if (totalPages <= 1) return null;
   return (
     <div className="flex flex-col items-center gap-2 py-4">
-      <Pagination total={totalPages} page={page} onChange={onChange} showControls color="success" aria-label="Navigasi halaman" />
-      <p className="text-xs text-stone-500">
+      <Pagination
+        total={totalPages}
+        page={page}
+        onChange={onChange}
+        showControls
+        color="primary"
+        aria-label="Navigasi halaman"
+        classNames={{
+          item: "text-txt-secondary",
+          cursor: "bg-primary text-white",
+        }}
+      />
+      <p className="text-xs text-txt-muted">
         Halaman {page} dari {totalPages} · {total} data
       </p>
     </div>

@@ -1,11 +1,21 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
 import SiteNavbar from "@/components/Navbar";
 import SiteFooter from "@/components/SiteFooter";
 
-const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], display: "swap" });
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-jakarta",
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+});
 
 export const metadata: Metadata = {
   title: {
@@ -23,7 +33,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id">
-      <body className={jakarta.className}>
+      <body className={`${jakarta.variable} ${inter.variable}`}>
         <Providers>
           <div className="flex min-h-screen flex-col">
             <SiteNavbar />

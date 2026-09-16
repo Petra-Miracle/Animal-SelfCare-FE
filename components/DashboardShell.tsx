@@ -1,11 +1,12 @@
 "use client";
 
-/* Kerangka dashboard: navigasi samping di desktop, tab horizontal di HP. */
-
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { LogOut, PawPrint } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
+import NotificationBell from "./NotificationBell";
 
 export interface NavItem {
   href: string;
@@ -23,50 +24,115 @@ export default function DashboardShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { user, logout } = useAuth();
+
   const active = (href: string) =>
     href.split("/").length <= 3 ? pathname === href : pathname.startsWith(href);
 
+  const initials = user?.email?.charAt(0).toUpperCase() ?? "U";
+  const displayName = user?.role === "SUPERADMIN" ? "Super Admin" : user?.email ?? "User";
+  const displayEmail = user?.email ?? "";
+
   return (
-    <div className="pt-6 sm:pt-8">
-      <p className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1 text-xs font-bold uppercase tracking-wider text-brand-700 ring-1 ring-brand-200">{title}</p>
-      <nav aria-label={title} className="sticky top-16 z-30 -mx-4 mt-3 bg-stone-50/95 px-4 py-2 backdrop-blur lg:static lg:mx-0 lg:bg-transparent lg:p-0">
-        <ul className="flex gap-1.5 overflow-x-auto pb-0.5 lg:hidden">
-          {items.map((it) => (
-            <li key={it.href} className="shrink-0">
-              <Link
-                href={it.href}
-                aria-current={active(it.href) ? "page" : undefined}
-                className={cn(
-                  "flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-2 text-xs font-bold shadow-sm transition-all",
-                  active(it.href) ? "bg-brand-600 text-white shadow-card" : "bg-white text-stone-600 ring-1 ring-stone-200"
-                )}
-              >
-                <it.icon className="h-3.5 w-3.5" aria-hidden /> {it.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
-      <div className="mt-4 grid gap-6 lg:grid-cols-[230px_1fr]">
-        <aside className="hidden lg:block">
-          <ul className="sticky top-24 space-y-1 rounded-3xl border border-stone-200/80 bg-white p-2.5 shadow-card">
+    <div className="flex min-h-screen bg-page">
+      {/* Sidebar - desktop */}
+      <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 bg-dark-mesh text-white">
+        {/* Logo */}
+        <div className="flex items-center gap-3 px-6 py-5">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20" aria-hidden>
+            <PawPrint className="h-5 w-5 text-white" />
+          </span>
+          <div>
+            <p className="text-sm font-bold text-white font-heading">Animal SelfCare</p>
+            <p className="text-xs text-white/60">Kota Kupang</p>
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 px-3 py-2">
+          <ul className="space-y-1">
             {items.map((it) => (
               <li key={it.href}>
                 <Link
                   href={it.href}
                   aria-current={active(it.href) ? "page" : undefined}
                   className={cn(
-                    "flex items-center gap-2.5 rounded-2xl px-3.5 py-2.5 text-sm font-semibold transition-colors",
-                    active(it.href) ? "bg-brand-600 text-white shadow-card" : "text-stone-600 hover:bg-stone-100"
+                    "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors",
+                    active(it.href)
+                      ? "bg-primary text-white"
+                      : "text-white/70 hover:bg-white/10 hover:text-white"
                   )}
                 >
-                  <it.icon className="h-4 w-4" aria-hidden /> {it.label}
+                  <it.icon className="h-5 w-5" aria-hidden />
+                  {it.label}
                 </Link>
               </li>
             ))}
           </ul>
-        </aside>
-        <div className="min-w-0">{children}</div>
+        </nav>
+
+        {/* User info */}
+        <div className="border-t border-white/10 px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-sm font-bold text-white">
+                {initials}
+              </span>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-white truncate">{displayName}</p>
+                <p className="text-xs text-white/50 truncate">{displayEmail}</p>
+              </div>
+            </div>
+            <button
+              onClick={logout}
+              className="rounded-lg p-2 text-white/50 hover:bg-white/10 hover:text-white transition-colors"
+              aria-label="Keluar"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main content */}
+      <div className="flex-1 lg:ml-64">
+        {/* TopBar */}
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-surface/95 px-4 backdrop-blur-sm sm:px-6">
+          <h1 className="text-lg font-bold text-txt-primary font-heading">{title}</h1>
+          <div className="flex items-center gap-3">
+            <NotificationBell />
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-bold text-white lg:hidden">
+              {initials}
+            </span>
+          </div>
+        </header>
+
+        {/* Mobile nav - horizontal scroll */}
+        <nav aria-label={title} className="lg:hidden sticky top-16 z-20 border-b border-border bg-surface/95 backdrop-blur-sm">
+          <ul className="flex gap-1.5 overflow-x-auto px-4 py-2">
+            {items.map((it) => (
+              <li key={it.href} className="shrink-0">
+                <Link
+                  href={it.href}
+                  aria-current={active(it.href) ? "page" : undefined}
+                  className={cn(
+                    "flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-2 text-xs font-bold transition-all",
+                    active(it.href)
+                      ? "bg-primary text-white"
+                      : "bg-subtle text-txt-secondary hover:bg-border"
+                  )}
+                >
+                  <it.icon className="h-3.5 w-3.5" aria-hidden /> {it.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        {/* Page content */}
+        <main className="p-4 sm:p-6">
+          {children}
+        </main>
       </div>
     </div>
   );

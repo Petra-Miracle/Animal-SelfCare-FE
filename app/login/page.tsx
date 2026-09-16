@@ -1,19 +1,13 @@
 "use client";
 
-/* Satu form login untuk SUPERADMIN & ADMIN_RS — redirect sesuai role.
-   Dibungkus HeroUI Form; panel samping memakai HeroUI Image. */
-
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { CircleAlert, Eye, EyeOff, KeyRound, LoaderCircle, Lock, Mail, PawPrint } from "lucide-react";
-import { Alert, Button, Card, CardBody, Form, Image, Input, Link as HeroLink } from "@heroui/react";
+import { Alert, Button, Form, Input } from "@heroui/react";
 import { useAuth } from "@/lib/auth";
 import { ApiError } from "@/lib/types";
-
-const SIDE_IMG =
-  "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=800&q=80";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -49,76 +43,108 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="mx-auto max-w-4xl pt-8 sm:pt-12">
-      <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-        <Card className="overflow-hidden border border-stone-200/70 shadow-lift">
-          <CardBody className="grid gap-0 p-0 md:grid-cols-2">
-            {/* Panel samping */}
-            <div className="relative hidden min-h-full overflow-hidden bg-gradient-to-br from-brand-800 via-brand-700 to-teal-700 md:block">
-              <Image
-                src={SIDE_IMG}
-                alt="Kucing yang tenang — setiap laporan membantu hewan seperti ini"
-                className="absolute inset-0 h-full w-full object-cover opacity-40"
-                removeWrapper
-              />
-              <div className="bg-card-dots absolute inset-0" aria-hidden />
-              <div className="relative flex h-full flex-col justify-between gap-8 p-8 text-white">
-                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm" aria-hidden>
-                  <PawPrint className="h-6 w-6" />
-                </span>
-                <div>
-                  <p className="text-2xl font-extrabold leading-tight">Dasbor petugas, satu pintu.</p>
-                  <p className="mt-2 text-sm leading-relaxed text-white/85">
-                    Verifikasi laporan, kelola fasilitas, dan pantau penanganan — semuanya realtime dari satu tempat.
-                  </p>
-                </div>
-              </div>
+    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-8">
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="w-full max-w-4xl overflow-hidden rounded-xl border border-border bg-surface shadow-lift"
+      >
+        <div className="grid min-h-[500px] md:grid-cols-2">
+          {/* Left panel - dark */}
+          <div className="relative hidden bg-dark-mesh p-8 md:flex md:flex-col md:justify-between">
+            {/* Logo */}
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20" aria-hidden>
+                <PawPrint className="h-5 w-5 text-white" />
+              </span>
+              <span className="text-sm font-bold text-white font-heading">Animal SelfCare</span>
             </div>
 
-            {/* Form */}
-            <div className="p-6 sm:p-8">
-              <div className="flex flex-col items-start gap-2">
-                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-card md:hidden" aria-hidden>
-                  <PawPrint className="h-6 w-6" />
+            {/* Tagline */}
+            <div>
+              <h2 className="text-2xl font-bold leading-tight text-white font-heading">
+                Kelola penanganan hewan terlantar dengan cepat dan terkoordinasi.
+              </h2>
+              <p className="mt-3 text-sm leading-relaxed text-white/70">
+                Dashboard terpadu untuk Super Admin Kota Kupang dan mitra Rumah Sakit Hewan.
+              </p>
+            </div>
+
+            {/* Copyright */}
+            <p className="text-xs text-white/50">
+              © 2026 Animal SelfCare — Kota Kupang
+            </p>
+          </div>
+
+          {/* Right panel - form */}
+          <div className="flex items-center justify-center p-6 sm:p-8">
+            <div className="w-full max-w-sm">
+              {/* Mobile logo */}
+              <div className="mb-6 flex items-center gap-3 md:hidden">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary" aria-hidden>
+                  <PawPrint className="h-5 w-5 text-white" />
                 </span>
-                <h1 className="text-xl font-extrabold tracking-tight text-stone-900">Masuk Dashboard</h1>
-                <p className="text-sm text-stone-500">
-                  Khusus Admin Rumah Sakit & SuperAdmin. Masyarakat tidak perlu akun untuk melapor.
-                </p>
+                <span className="text-sm font-bold text-txt-primary font-heading">Animal SelfCare</span>
               </div>
-              <Form onSubmit={submit} className="mt-5 flex flex-col gap-3">
+
+              <h1 className="text-2xl font-bold text-txt-primary font-heading">Masuk ke Dashboard</h1>
+              <p className="mt-2 text-sm text-txt-secondary">
+                Khusus untuk Admin Rumah Sakit & Super Admin.
+              </p>
+
+              <Form onSubmit={submit} className="mt-6 flex flex-col gap-4">
                 <Input
                   label="Email"
                   type="email"
                   autoComplete="email"
-                  placeholder="cth. admin@rshewan.id"
+                  placeholder="nama@rumahsakit.id"
                   value={email}
                   onValueChange={setEmail}
                   isRequired
                   aria-label="Email"
-                  startContent={<Mail className="h-4 w-4 shrink-0 text-stone-400" aria-hidden />}
+                  startContent={<Mail className="h-4 w-4 shrink-0 text-txt-muted" aria-hidden />}
+                  classNames={{
+                    label: "text-txt-primary font-medium",
+                    input: "text-txt-primary",
+                  }}
                 />
                 <Input
-                  label="Kata sandi"
+                  label="Kata Sandi"
                   type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
                   placeholder="••••••••"
                   value={password}
                   onValueChange={setPassword}
                   isRequired
-                  aria-label="Kata sandi"
-                  startContent={<KeyRound className="h-4 w-4 shrink-0 text-stone-400" aria-hidden />}
+                  aria-label="Kata Sandi"
+                  startContent={<KeyRound className="h-4 w-4 shrink-0 text-txt-muted" aria-hidden />}
                   endContent={
                     <button
                       type="button"
                       aria-label={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
                       onClick={() => setShowPassword((v) => !v)}
-                      className="text-stone-400 outline-none hover:text-stone-600 focus-visible:text-stone-600"
+                      className="text-txt-muted outline-none hover:text-txt-secondary"
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" aria-hidden /> : <Eye className="h-4 w-4" aria-hidden />}
                     </button>
                   }
+                  classNames={{
+                    label: "text-txt-primary font-medium",
+                    input: "text-txt-primary",
+                  }}
                 />
+
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 text-sm text-txt-secondary cursor-pointer">
+                    <input type="checkbox" className="h-4 w-4 rounded border-border text-primary focus:ring-primary" />
+                    Ingat saya
+                  </label>
+                  <Link href="/forgot-password" className="text-sm font-medium text-primary hover:underline">
+                    Lupa kata sandi?
+                  </Link>
+                </div>
+
                 {error ? (
                   <Alert
                     color="danger"
@@ -128,26 +154,19 @@ export default function LoginPage() {
                     startContent={<CircleAlert className="h-5 w-5 shrink-0" aria-hidden />}
                   />
                 ) : null}
+
                 <Button
                   type="submit"
-                  color="success"
-                  className="bg-brand-600 font-bold"
+                  className="w-full bg-primary font-bold text-white"
                   isLoading={loading}
                   spinner={<LoaderCircle className="h-4 w-4 animate-spin" aria-hidden />}
-                  startContent={loading ? undefined : <Lock className="h-4 w-4" aria-hidden />}
                 >
                   {loading ? "Memeriksa…" : "Masuk"}
                 </Button>
               </Form>
-              <p className="mt-4 text-center text-xs text-stone-400">
-                Ingin melaporkan hewan?{" "}
-                <HeroLink as={Link} href="/lapor" color="success" className="text-xs font-semibold">
-                  Ke form laporan
-                </HeroLink>
-              </p>
             </div>
-          </CardBody>
-        </Card>
+          </div>
+        </div>
       </motion.div>
     </div>
   );
